@@ -1,7 +1,8 @@
 /* ===================================================================
-   MOTOR FP — NÚCLEO COMÚN (v3)
-   Añade: fases de la aplicación, modo de partida (libre / torneo),
-   estado "listo" por equipo, contador de rondas y reinicio total.
+   MOTOR FP — NÚCLEO COMÚN (v4)
+   Añade: portavoz por equipo (para juegos de un jugador), identidad
+   de equipo personalizada (emoji + nombre propios), además de las
+   preestablecidas rápidas.
    =================================================================== */
 
 var Motor = (function () {
@@ -17,39 +18,31 @@ var Motor = (function () {
     { nombre: 'Gestión',       emoji: '💼' }
   ];
 
+  var EMOJI_PALETTE = [
+    '📦','🚚','🛒','🏬','📈','🏷️','🗃️','💼','🧾','📊','🏭','🛍️',
+    '💻','🖥️','🩺','💉','🍽️','👨‍🍳','💇','✂️','⚡','🔧','🚗','🧵','🎨','🌾','🖊️','🔬'
+  ];
+
   /* ---------------- BUS DE EVENTOS ---------------- */
   var listeners = {};
-  function on(evt, fn) {
-    (listeners[evt] = listeners[evt] || []).push(fn);
-    return function off() { listeners[evt] = (listeners[evt] || []).filter(function (f) { return f !== fn; }); };
-  }
+  function on(evt, fn) { (listeners[evt] = listeners[evt] || []).push(fn); return function off() { listeners[evt] = (listeners[evt] || []).filter(function (f) { return f !== fn; }); }; }
   function emit(evt, payload) { (listeners[evt] || []).forEach(function (fn) { fn(payload); }); }
 
-  /* ---------------- FASES DE LA APLICACIÓN ---------------- */
-  // Fases de alto nivel (distintas de los "estados" internos de un juego concreto)
+  /* ---------------- FASES ---------------- */
   var FASES = ['SPLASH', 'MODO', 'EQUIPOS', 'CONTENIDO_GATE', 'JUEGOS', 'JUGANDO', 'RESULTADOS'];
   var fase = 'SPLASH';
   function setFase(f, extra) { var anterior = fase; fase = f; emit('fase:cambio', { anterior: anterior, actual: f, extra: extra || {} }); persistir(); }
   function getFase() { return fase; }
 
-  var ESTADOS = [
-    'CONFIGURACION', 'TUTORIAL', 'PREPARACION', 'TURNO',
-    'PREGUNTA_RETO', 'FEEDBACK', 'CAMBIO_TURNO',
-    'RECUPERACION', 'RESULTADOS', 'FINALIZACION'
-  ];
+  var ESTADOS = ['CONFIGURACION', 'TUTORIAL', 'PREPARACION', 'TURNO', 'PREGUNTA_RETO', 'FEEDBACK', 'CAMBIO_TURNO', 'RECUPERACION', 'RESULTADOS', 'FINALIZACION'];
   var estadoActual = 'CONFIGURACION';
   function setEstado(nuevo, extra) { var anterior = estadoActual; estadoActual = nuevo; emit('estado:cambio', { anterior: anterior, actual: nuevo, extra: extra || {} }); }
   function getEstado() { return estadoActual; }
 
   /* ---------------- MODO DE PARTIDA ---------------- */
-  var modo = { tipo: 'libre', objetivoRondas: null }; // tipo: 'libre' | 'mejor3' | 'mejor5'
-  function setModo(tipo) {
-    modo.tipo = tipo;
-    modo.objetivoRondas = tipo === 'mejor3' ? 3 : (tipo === 'mejor5' ? 5 : null);
-    persistir();
-  }
+  var modo = { tipo: 'libre', objetivoRondas: null };
+  function setModo(tipo) { modo.tipo = tipo; modo.objetivoRondas = tipo === 'mejor3' ? 3 : (tipo === 'mejor5' ? 5 : null); persistir(); }
   function getModo() { return modo; }
-
   var rondaActual = 0;
   function incrementarRonda() { rondaActual++; persistir(); return rondaActual; }
   function getRondaActual() { return rondaActual; }
@@ -60,20 +53,34 @@ var Motor = (function () {
   var equipoActivoIdx = 0;
 
   function presetsDisponibles() {
-    var usados = equipos.map(function (e) { return e.nombre; });
-    return TEAM_PRESETS.filter(function (p) { return usados.indexOf(p.nombre) === -1; });
+    var usados = equipos.map(function (e) { return e.nombre.toLowerCase(); });
+    return TEAM_PRESETS.filter(function (p) { return usados.indexOf(p.nombre.toLowerCase()) === -1; });
   }
+  function emojisUsados() { return equipos.map(function (e) { return e.emoji; }); }
 
-  function crearEquipoDesdePreset(preset) {
-    if (equipos.length >= 8) return { ok: false, error: 'Máximo 8 equipos.' };
-    var yaExiste = equipos.some(function (e) { return e.nombre === preset.nombre; });
-    if (yaExiste) return { ok: false, error: 'Ese equipo ya está en juego.' };
+  function crearEquipoBase(nombre, emoji, portavoz) {
     equipos.push({
-      id: 'T' + (equipos.length + 1), nombre: preset.nombre, emoji: preset.emoji,
+      id: 'T' + (equipos.length + 1), nombre: nombre, emoji: emoji, portavoz: portavoz || '',
       puntos: 0, dificultad: 3, historial: [], rachaAciertos: 0, rachaErrores: 0, listo: false
     });
     persistir();
     emit('equipos:cambio', equipos);
+  }
+
+  function crearEquipoDesdePreset(preset) {
+    if (equipos.length >= 8) return { ok: false, error: 'Máximo 8 equipos.' };
+    if (equipos.some(function (e) { return e.nombre.toLowerCase() === preset.nombre.toLowerCase(); })) return { ok: false, error: 'Ese equipo ya está en juego.' };
+    crearEquipoBase(preset.nombre, preset.emoji, '');
+    return { ok: true };
+  }
+
+  function crearEquipoPersonalizado(nombre, emoji, portavoz) {
+    if (equipos.length >= 8) return { ok: false, error: 'Máximo 8 equipos.' };
+    nombre = (nombre || '').trim();
+    if (!nombre) return { ok: false, error: 'Ponle un nombre al equipo.' };
+    if (equipos.some(function (e) { return e.nombre.toLowerCase() === nombre.toLowerCase(); })) return { ok: false, error: 'Ya hay un equipo con ese nombre.' };
+    if (equipos.some(function (e) { return e.emoji === emoji; })) return { ok: false, error: 'Ese símbolo ya lo usa otro equipo.' };
+    crearEquipoBase(nombre, emoji, portavoz);
     return { ok: true };
   }
 
@@ -89,7 +96,6 @@ var Motor = (function () {
     var eq = equipos.find(function (e) { return e.id === id; });
     if (eq) { eq.listo = valor; persistir(); emit('equipos:cambio', equipos); }
   }
-
   function todosListos() { return equipos.length >= 2 && equipos.every(function (e) { return e.listo; }); }
 
   function confirmarInicio() {
@@ -121,23 +127,15 @@ var Motor = (function () {
     persistir();
     emit('puntuacion:cambio', { equipo: eq, delta: cantidad });
   }
-
-  function clasificacion() {
-    return equipos.slice().sort(function (a, b) { return b.puntos - a.puntos; });
-  }
+  function clasificacion() { return equipos.slice().sort(function (a, b) { return b.puntos - a.puntos; }); }
 
   /* ---------------- DIFICULTAD ADAPTATIVA ---------------- */
   function registrarResultado(equipoId, conceptId, acierto, tipo, tiempoMs) {
     var eq = equipos.find(function (e) { return e.id === equipoId; });
     if (!eq) return;
     eq.historial.push({ conceptId: conceptId, acierto: acierto, dificultad: eq.dificultad, tipo: tipo || 'desconocido', tiempoMs: tiempoMs || null, ts: Date.now() });
-    if (acierto) {
-      eq.rachaAciertos++; eq.rachaErrores = 0;
-      if (eq.rachaAciertos >= 3 && eq.dificultad < 5) { eq.dificultad++; eq.rachaAciertos = 0; }
-    } else {
-      eq.rachaErrores++; eq.rachaAciertos = 0;
-      if (eq.rachaErrores >= 2 && eq.dificultad > 1) { eq.dificultad--; eq.rachaErrores = 0; }
-    }
+    if (acierto) { eq.rachaAciertos++; eq.rachaErrores = 0; if (eq.rachaAciertos >= 3 && eq.dificultad < 5) { eq.dificultad++; eq.rachaAciertos = 0; } }
+    else { eq.rachaErrores++; eq.rachaAciertos = 0; if (eq.rachaErrores >= 2 && eq.dificultad > 1) { eq.dificultad--; eq.rachaErrores = 0; } }
     persistir();
     emit('dificultad:actualizada', { equipo: eq });
   }
@@ -159,7 +157,6 @@ var Motor = (function () {
     });
     return { dominados: dominados, reforzar: reforzar };
   }
-
   function analizarDominioGrupal() {
     var dominadosSet = {}, reforzarSet = {};
     equipos.forEach(function (eq) {
@@ -173,7 +170,6 @@ var Motor = (function () {
   /* ---------------- CONTENIDO ---------------- */
   var contenido = null;
   var CAMPOS_RAIZ = ['schema_version', 'metadata', 'concepts', 'questions', 'pairs', 'expression', 'taboo', 'infiltrated', 'answer_is', 'challenges', 'recovery'];
-
   function validarContenido(json) {
     var errores = [];
     CAMPOS_RAIZ.forEach(function (campo) { if (!(campo in json)) errores.push('Falta el campo raíz "' + campo + '".'); });
@@ -198,7 +194,6 @@ var Motor = (function () {
     comprobarConceptId(json.challenges, 'challenges', 'concept_ids');
     return errores;
   }
-
   function cargarContenido(textoOJson) {
     var json;
     try { json = typeof textoOJson === 'string' ? JSON.parse(textoOJson) : textoOJson; }
@@ -212,7 +207,6 @@ var Motor = (function () {
   }
   function getContenido() { return contenido; }
   function hayContenido() { return !!(contenido && contenido.questions && contenido.questions.length); }
-
   function seleccionarPorDificultad(lista, dificultad, margen) {
     margen = margen === undefined ? 1 : margen;
     if (!lista || !lista.length) return null;
@@ -220,10 +214,7 @@ var Motor = (function () {
     var pool = candidatos.length ? candidatos : lista;
     return pool[Math.floor(Math.random() * pool.length)];
   }
-  function preguntaParaEquipo(equipoId) {
-    if (!contenido) return null;
-    return seleccionarPorDificultad(contenido.questions, nivelDificultad(equipoId));
-  }
+  function preguntaParaEquipo(equipoId) { if (!contenido) return null; return seleccionarPorDificultad(contenido.questions, nivelDificultad(equipoId)); }
 
   /* ---------------- TEMPORIZADOR ---------------- */
   var timerState = { restante: 0, total: 0, activo: false, handle: null };
@@ -241,19 +232,17 @@ var Motor = (function () {
   function detenerTemporizador() { if (timerState.handle) clearInterval(timerState.handle); timerState.handle = null; timerState.activo = false; }
   function pausarTemporizador() { if (timerState.handle) { clearInterval(timerState.handle); timerState.handle = null; timerState.activo = false; } emit('timer:pausa', timerState); }
 
-  /* ---------------- PERSISTENCIA / GUARDADO ---------------- */
-  var STORAGE_KEY = 'motorfp_sesion_v3';
+  /* ---------------- PERSISTENCIA ---------------- */
+  var STORAGE_KEY = 'motorfp_sesion_v4';
   function persistir() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         fase: fase, equipos: equipos, equipoActivoIdx: equipoActivoIdx,
         contenido: contenido, estado: estadoActual, modo: modo, rondaActual: rondaActual
       }));
-    } catch (e) { /* sin almacenamiento disponible */ }
+    } catch (e) {}
   }
-  function haySesionGuardada() {
-    try { return !!localStorage.getItem(STORAGE_KEY); } catch (e) { return false; }
-  }
+  function haySesionGuardada() { try { return !!localStorage.getItem(STORAGE_KEY); } catch (e) { return false; } }
   function restaurarSesion() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
@@ -278,12 +267,13 @@ var Motor = (function () {
 
   return {
     on: on, emit: emit,
-    TEAM_PRESETS: TEAM_PRESETS, presetsDisponibles: presetsDisponibles,
+    TEAM_PRESETS: TEAM_PRESETS, EMOJI_PALETTE: EMOJI_PALETTE,
+    presetsDisponibles: presetsDisponibles, emojisUsados: emojisUsados,
     FASES: FASES, setFase: setFase, getFase: getFase,
     ESTADOS: ESTADOS, setEstado: setEstado, getEstado: getEstado,
     setModo: setModo, getModo: getModo,
     incrementarRonda: incrementarRonda, getRondaActual: getRondaActual, objetivoAlcanzado: objetivoAlcanzado,
-    crearEquipoDesdePreset: crearEquipoDesdePreset, quitarEquipo: quitarEquipo,
+    crearEquipoDesdePreset: crearEquipoDesdePreset, crearEquipoPersonalizado: crearEquipoPersonalizado, quitarEquipo: quitarEquipo,
     marcarListo: marcarListo, todosListos: todosListos, confirmarInicio: confirmarInicio,
     getEquipos: getEquipos, getEquipoActivo: getEquipoActivo, getEquipoActivoIdx: getEquipoActivoIdx,
     activarEquipo: activarEquipo, siguienteEquipo: siguienteEquipo,

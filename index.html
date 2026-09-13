@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>XPeriencia: La FP se juega</title>
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
 
@@ -12,28 +12,27 @@
 <div id="splashScreen">
   <div id="splashEmojis"></div>
   <div class="splash-content">
-    <div class="splash-title">XPeriencia</div>
-    <div class="splash-sub">La FP se juega</div>
-    <button class="splash-start" id="splashStartBtn">▶ Empezar</button>
+    <div id="introSeq"></div>
+    <div class="splash-title hidden" id="splashTitle">XPeriencia</div>
+    <div class="splash-sub hidden" id="splashSub">La FP se juega</div>
+    <button class="splash-start hidden" id="splashStartBtn">▶ Empezar</button>
     <button class="splash-continue hidden" id="splashContinueBtn">Continuar partida guardada</button>
   </div>
 </div>
 
+<!-- ============ TRANSICIÓN "A JUGAR" ============ -->
+<div id="playIntro"><div class="txt">¡A JUGAR!</div></div>
+
 <!-- ============ APP ============ -->
 <div id="app">
-  <div class="title-chip">
-    <span class="t-main">XPeriencia</span>
-    <span class="t-sub">La FP se juega</span>
-  </div>
+  <div class="title-chip">XPeriencia</div>
 
-  <!-- Pantallas de flujo previas al juego -->
   <div id="flowScreen" class="flow-screen hidden"></div>
 
-  <!-- Juego a pantalla completa -->
   <div id="gameArea" class="hidden" style="display:flex;flex-direction:column;height:100%;">
     <div id="teamsPanel"></div>
     <div id="stage">
-      <div id="timerWrap"><span>⏱</span><span class="t-num">--</span></div>
+      <div id="timerWrap"><span class="t-num">--</span><span id="timerWarnText"></span></div>
       <div id="timeUpBanner"></div>
       <div id="turnScreen"></div>
       <div id="stageContent"></div>
@@ -42,35 +41,44 @@
   </div>
 </div>
 
-<!-- Overlay: elegir identidad de un nuevo equipo -->
+<!-- Overlay: elegir/crear identidad -->
 <div class="identity-overlay" id="identityOverlay">
   <div class="identity-modal">
     <h3>Elige la identidad del equipo</h3>
+    <div class="sec-label">Elige rápido</div>
     <div class="identity-grid" id="identityGrid"></div>
+    <div class="sec-label">O crea el vuestro</div>
+    <div class="custom-form">
+      <button class="emoji-cycle" id="emojiCycleBtn">📦</button>
+      <div class="hint">Toca el símbolo para cambiarlo</div>
+      <input type="text" id="customNombre" placeholder="Nombre del equipo" maxlength="20">
+      <input type="text" id="customPortavoz" placeholder="Portavoz (opcional)" maxlength="24">
+      <button class="big-cta" id="customAddBtn">➕ Añadir este equipo</button>
+      <div id="customError"></div>
+    </div>
     <button class="flow-back" id="identityCancel" style="margin-top:14px">Cancelar</button>
   </div>
 </div>
 
 <input type="file" id="contentFile" accept=".txt,.json" class="hidden">
 
-<!-- Chivatini: aviso rápido -->
+<!-- Chivatini: aviso rápido (solo reacciones de juego) -->
 <div id="chivaBanner">
-  <div class="b-portrait">🤖</div>
+  <div class="b-portrait emoji">🤖</div>
   <div class="b-txt"></div>
 </div>
 
-<!-- Chivatini: modal importante -->
+<!-- Chivatini: modal (victoria / recuperación) -->
 <div id="chivaOverlay">
   <div class="chiva-modal-lg">
     <div class="chiva-head">
-      <div class="chiva-portrait" id="chivaPortrait">👽</div>
+      <div class="chiva-portrait emoji" id="chivaPortrait">👽</div>
       <div class="chiva-name">Chivatini</div>
     </div>
     <div class="chiva-bubble" id="chivaBubble">
       <div class="chiva-txt" id="chivaTxt"></div>
       <div class="chiva-arrow" id="chivaArrow">▸</div>
     </div>
-    <button class="chiva-confirm-btn" id="chivaConfirmBtn">Vamos</button>
   </div>
 </div>
 
@@ -86,8 +94,10 @@
   </div>
 </div>
 
-<script src="motor.js?v=4"></script>
-<script src="chivatini.js?v=4"></script>
-<script src="ui.js?v=4"></script>
+<script src="motor.js?v=5"></script>
+<script src="chivatini.js?v=5"></script>
+<script src="ui-core.js?v=5"></script>
+<script src="ui-equipos.js?v=5"></script>
+<script src="ui-juego.js?v=5"></script>
 </body>
 </html>
