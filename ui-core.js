@@ -66,60 +66,41 @@ var UI = (function () {
   /* =================== Secuencia de intro: XP y "eriencia" terminan juntos =================== */
   function reproducirIntro(callback) {
     var chip = document.getElementById('introChip');
-    var colon = document.getElementById('introColon');
     var rest = document.getElementById('introRest');
     chip.textContent = 'FP';
-    chip.classList.remove('pulse', 'junto', 'agita', 'explota');
-    chip.style.display = ''; chip.style.opacity = ''; chip.style.transition = ''; chip.style.transform = '';
-    document.getElementById('introSeq').classList.remove('impacto', 'junto');
-    colon.classList.remove('gone');
-    colon.style.display = ''; colon.style.opacity = ''; colon.style.transition = '';
-    rest.classList.remove('reveal');
-    rest.style.width = ''; rest.style.transition = '';
+    chip.classList.remove('crece');
+    chip.style.display = ''; chip.style.opacity = ''; chip.style.transform = '';
+    document.getElementById('introSeq').classList.remove('impacto');
+    rest.classList.remove('aparece');
+    rest.style.width = '';
     rest.textContent = '';
-    document.querySelectorAll('.intro-flash,.intro-particle').forEach(function (el) { el.remove(); });
 
+    // 1) agitación fuerte y mutación a "XP"
     setTimeout(function () {
-      colon.classList.add('gone');
       chip.classList.add('agita');
-      setTimeout(function () { chip.textContent = 'XP'; }, 200);
-    }, 900);
+      setTimeout(function () { chip.textContent = 'XP'; }, 220);
+    }, 500);
+
+    // 2) segunda agitación fuerte sobre "XP"
+    setTimeout(function () {
+      chip.classList.remove('agita');
+      void chip.offsetWidth;
+      chip.classList.add('agita2');
+    }, 1150);
+
+    // 3) "XP" crece y se desvanece; detrás aparece la palabra completa
+    setTimeout(function () {
+      chip.classList.remove('agita2');
+      chip.classList.add('crece');
+      rest.style.width = 'auto';
+      rest.textContent = 'XPeriencia';
+      requestAnimationFrame(function () { rest.classList.add('aparece'); });
+    }, 1650);
 
     setTimeout(function () {
-      // explosión: el fondo se opaca un instante, salen partículas y el
-      // chip "XP" estalla; de ahí sale ya la palabra completa
-      var flash = document.createElement('div');
-      flash.className = 'intro-flash';
-      document.body.appendChild(flash);
-      requestAnimationFrame(function () { flash.classList.add('show'); });
-
-      var r = chip.getBoundingClientRect();
-      var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      for (var i = 0; i < 14; i++) {
-        var p = document.createElement('div');
-        p.className = 'intro-particle';
-        var ang = (Math.PI * 2 * i) / 14;
-        var dist = 60 + Math.random() * 50;
-        p.style.left = cx + 'px'; p.style.top = cy + 'px';
-        p.style.setProperty('--px', Math.cos(ang) * dist + 'px');
-        p.style.setProperty('--py', Math.sin(ang) * dist + 'px');
-        p.style.background = i % 2 ? '#7FE0FF' : '#CFFF04';
-        document.body.appendChild(p);
-        setTimeout(function (el) { return function () { el.remove(); }; }(p), 550);
-      }
-      chip.classList.add('explota');
-
-      setTimeout(function () {
-        flash.classList.remove('show');
-        setTimeout(function () { flash.remove(); }, 200);
-        chip.style.display = 'none';
-        colon.style.display = 'none';
-        rest.style.transition = 'none';
-        rest.style.width = 'auto';
-        rest.textContent = 'XPeriencia';
-        document.getElementById('introSeq').classList.add('impacto');
-      }, 380);
-    }, 1650);
+      chip.style.display = 'none';
+      document.getElementById('introSeq').classList.add('impacto');
+    }, 2150);
 
     setTimeout(function () { document.getElementById('splashSub').classList.add('show'); }, 2350);
     setTimeout(function () {
