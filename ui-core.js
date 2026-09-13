@@ -69,7 +69,7 @@ var UI = (function () {
     var colon = document.getElementById('introColon');
     var rest = document.getElementById('introRest');
     chip.textContent = 'FP';
-    chip.classList.remove('pulse');
+    chip.classList.remove('pulse', 'junto');
     document.getElementById('introSeq').classList.remove('impacto', 'junto');
     colon.classList.remove('gone');
     rest.classList.remove('reveal');
@@ -88,6 +88,7 @@ var UI = (function () {
 
     setTimeout(function () {
       document.getElementById('introSeq').classList.add('junto', 'impacto');
+      document.getElementById('introChip').classList.add('junto');
     }, 2700);
 
     setTimeout(function () { document.getElementById('splashSub').classList.add('show'); }, 3150);

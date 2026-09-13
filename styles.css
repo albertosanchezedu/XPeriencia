@@ -62,12 +62,17 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 #app{position:relative;z-index:1;}
 .splash-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:220px;justify-content:center;}
 
-/* ---- Título con chip "XP" que termina PEGADO al resto (gap, no margin) ---- */
+/* ---- Título con chip "XP": al encajar, deja de ser una "caja" y pasa
+   a ser texto plano — así SIEMPRE se ve como una única palabra ---- */
 #introSeq{font-size:72px;font-weight:900;letter-spacing:-.01em;display:flex;align-items:baseline;gap:34px;transition:gap .5s cubic-bezier(.2,1.8,.3,1);}
-#introSeq.junto{gap:1px;}
-#introChip{background:var(--accent-lima);color:var(--text-dark);padding:2px 18px;border-radius:16px;display:inline-block;transition:transform .45s cubic-bezier(.2,1.8,.3,1);}
+#introSeq.junto{gap:0;}
+#introChip{
+  background:var(--accent-lima);color:var(--text-dark);padding:2px 18px;border-radius:16px;display:inline-block;
+  transition:transform .45s cubic-bezier(.2,1.8,.3,1),background-color .4s ease,padding .4s ease,border-radius .4s ease,color .4s ease;
+}
 #introChip.pulse{animation:chipPulse .7s cubic-bezier(.3,1.9,.3,1);}
 @keyframes chipPulse{0%{transform:scale(1) rotate(0);}30%{transform:scale(1.35) rotate(-8deg);}55%{transform:scale(.9) rotate(5deg);}80%{transform:scale(1.12) rotate(-2deg);}100%{transform:scale(1) rotate(0);}}
+#introChip.junto{background:transparent;color:var(--text-dark);padding:2px 0;border-radius:0;transform:none;}
 #introColon{transition:opacity .3s ease,width .3s ease;display:inline-block;}
 #introColon.gone{opacity:0;width:0;overflow:hidden;}
 #introRest{display:inline-block;overflow:hidden;white-space:nowrap;width:0;transition:width .85s cubic-bezier(.16,1.3,.25,1);}
@@ -174,7 +179,7 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .chp-step{display:flex;gap:14px;margin-bottom:16px;}
 .chp-step .chp-num{background:var(--accent-lima);color:var(--text-dark);font-weight:900;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;}
 .chp-step .chp-txt{font-size:14px;line-height:1.5;padding-top:3px;}
-.chp-copy-btn{background:var(--panel-dark);color:#fff;border:none;font-weight:700;font-size:13px;padding:10px 18px;border-radius:99px;cursor:pointer;margin-top:6px;}
+.chp-copy-btn{background:var(--panel-dark);color:#fff;border:none;font-weight:700;font-size:13px;padding:10px 18px;border-radius:99px;cursor:pointer;margin-top:6px;width:190px;text-align:center;display:inline-block;}
 .chp-copy-btn.copied{background:#3E8A5B;}
 .content-help-modal .flow-back{margin-top:10px;}
 
@@ -208,19 +213,18 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .team-card.sorteo-flash{animation:sorteoFlash .18s ease;}
 @keyframes sorteoFlash{0%{box-shadow:0 0 0 0 rgba(207,255,4,0);}50%{box-shadow:0 0 0 6px rgba(207,255,4,.5);}100%{box-shadow:0 0 0 0 rgba(207,255,4,0);}}
 
-/* ---- Sorteo: una única tarjeta uniforme con giro 3D y latido ---- */
+/* ---- Sorteo: una única tarjeta uniforme y centrada, sin latido ---- */
 #sorteoCard{
   width:220px;height:170px;background:#1f2e38;border:3px solid var(--accent-cyan);border-radius:20px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-  margin:0 auto;perspective:800px;animation:sorteoLatido .55s ease-in-out infinite;
+  margin:0 auto;
 }
-#sorteoCard.final{animation:none;border-color:var(--accent-lima);transform:scale(1.08);box-shadow:0 0 30px rgba(207,255,4,.5);}
-@keyframes sorteoLatido{0%,100%{transform:scale(1);}50%{transform:scale(1.07);}}
-#sorteoCardInner{display:flex;flex-direction:column;align-items:center;gap:8px;transition:transform .1s ease,opacity .1s ease;}
-#sorteoCardInner.slide-out{transform:translateX(-30px);opacity:0;}
-#sorteoCardInner.slide-in{transform:translateX(30px);opacity:0;}
+#sorteoCard.final{border-color:var(--accent-lima);box-shadow:0 0 30px rgba(207,255,4,.5);}
+#sorteoCardInner{display:flex;flex-direction:column;align-items:center;gap:8px;transition:opacity .1s ease,transform .1s ease;}
+#sorteoCardInner.fading{opacity:0;transform:scale(.82);}
 #sorteoCardInner .emoji{font-size:46px;font-family:var(--emoji-font);}
 #sorteoCardInner .name{color:#fff;font-size:15px;font-weight:900;}
+#sorteoResultado{text-align:center;width:100%;}
 
 /* ---- Temporizador: icono a la izquierda del número, simple y claro ---- */
 #timerWrap{position:absolute;top:16px;right:16px;display:flex;flex-direction:row;align-items:center;gap:9px;background:var(--panel-dark);color:var(--text-light);padding:10px 20px;border-radius:99px;box-shadow:var(--shadow-panel);z-index:5;}

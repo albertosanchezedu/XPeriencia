@@ -161,7 +161,7 @@
 
     var inner = document.getElementById('sorteoCardInner');
     var card = document.getElementById('sorteoCard');
-    var vueltas = 13 + Math.floor(Math.random() * 4);
+    var vueltas = 11 + Math.floor(Math.random() * 3);
     var elegido = Math.floor(Math.random() * equipos.length);
     var intervalo = 35;
 
@@ -172,12 +172,10 @@
     }
 
     function tick(n) {
-      inner.classList.add('slide-out');
+      inner.classList.add('fading');
       setTimeout(function () {
         pintar(n);
-        inner.classList.remove('slide-out');
-        inner.classList.add('slide-in');
-        requestAnimationFrame(function () { inner.classList.remove('slide-in'); });
+        inner.classList.remove('fading');
         Sonido.clic();
         if (n < vueltas) {
           intervalo *= 1.18;
@@ -190,7 +188,7 @@
           var elegidoEq = equipos[elegido];
           document.getElementById('sorteoResultado').innerHTML =
             '<div style="font-size:26px;font-weight:900;color:var(--accent-lima);margin-bottom:18px">¡Empieza ' + elegidoEq.emoji + ' ' + elegidoEq.nombre + '!</div>' +
-            '<button class="big-cta" id="vamosAllaBtn">▶ ¡Vamos allá!</button>';
+            '<button class="big-cta" id="vamosAllaBtn" style="margin:0 auto">▶ ¡Vamos allá!</button>';
           document.getElementById('vamosAllaBtn').onclick = lanzarTransicionFinal;
         }
       }, 100);
