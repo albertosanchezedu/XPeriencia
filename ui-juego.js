@@ -6,18 +6,37 @@
 
   var refs = UI.refs;
 
-  /* =================== CONTENIDO (puerta obligatoria) =================== */
+  /* =================== CONTENIDO (puerta obligatoria, sin auto-avance) =================== */
   UI.screens.CONTENIDO_GATE = function () {
-    if (Motor.hayContenido()) { Motor.setFase('JUEGOS'); UI.render(); return; }
+    if (Motor.hayContenido()) { pintarContenidoConfirmado(); return; }
+    pintarContenidoPendiente();
+  };
+
+  function pintarContenidoPendiente() {
     refs.flowScreen.innerHTML =
       '<h2>Ey, profe 👋</h2>' +
       '<div class="muted">Antes de nada, sube el contenido.txt de esta unidad para que preparemos las preguntas.</div>' +
       '<button class="big-cta" id="loadContentBtn">📚 Subir contenido.txt</button>' +
-      '<div id="contentConfirmBox"></div>' +
       '<div class="flow-footer"><button class="flow-back" id="backEquiposBtn">◀ Volver</button></div>';
     document.getElementById('backEquiposBtn').onclick = function () { Motor.setFase('EQUIPOS'); UI.render(); };
     document.getElementById('loadContentBtn').onclick = function () { Sonido.clic(); refs.contentFileInput.click(); };
-  };
+  }
+
+  function pintarContenidoConfirmado() {
+    var meta = Motor.getContenido().metadata || {};
+    var etiqueta = [meta.modulo, meta.unidad].filter(Boolean).join(' · ') || meta.titulo || 'contenido cargado';
+    refs.flowScreen.innerHTML =
+      '<div class="content-confirm-screen">' +
+      '<div class="big-check-icon">✅</div>' +
+      '<div class="titulo-cargado">' + etiqueta + '</div>' +
+      '<div class="sub-cargado">' + Motor.getContenido().concepts.length + ' conceptos listos para usarse</div>' +
+      '<div class="acciones">' +
+      '<button class="flow-back" id="cambiarContenidoBtn">🔄 Cambiar contenido</button>' +
+      '<button class="big-cta" id="continuarContenidoBtn">▶ Continuar</button>' +
+      '</div></div>';
+    document.getElementById('cambiarContenidoBtn').onclick = function () { Sonido.clic(); refs.contentFileInput.click(); };
+    document.getElementById('continuarContenidoBtn').onclick = function () { Sonido.avanzar(); Motor.setFase('JUEGOS'); UI.render(); };
+  }
 
   refs.contentFileInput.onchange = function (e) {
     var file = e.target.files[0];
@@ -26,16 +45,11 @@
     reader.onload = function () {
       var res = Motor.cargarContenido(reader.result);
       if (!res.ok) { alert('El archivo tiene errores:\n\n' + res.errores.join('\n')); return; }
-      var meta = Motor.getContenido().metadata || {};
-      var etiqueta = [meta.modulo, meta.unidad].filter(Boolean).join(' · ') || meta.titulo || 'contenido cargado';
-      if (Motor.getFase() === 'CONTENIDO_GATE') {
-        var box = document.getElementById('contentConfirmBox');
-        if (box) {
-          box.innerHTML = '<div class="content-loaded-box"><span class="ok-tag">✔ Listo,</span> ya tengo cargado <strong>' + etiqueta + '</strong> (' + Motor.getContenido().concepts.length + ' conceptos). ¡Vamos a por el catálogo!</div>';
-          Sonido.acierto();
-          setTimeout(function () { Motor.setFase('JUEGOS'); UI.render(); }, 1700);
-        } else { Motor.setFase('JUEGOS'); UI.render(); }
-      } else {
+      Sonido.acierto();
+      if (Motor.getFase() === 'CONTENIDO_GATE') pintarContenidoConfirmado();
+      else {
+        var meta = Motor.getContenido().metadata || {};
+        var etiqueta = [meta.modulo, meta.unidad].filter(Boolean).join(' · ') || meta.titulo || 'contenido cargado';
         alert('Contenido actualizado: ' + etiqueta + ' (' + Motor.getContenido().concepts.length + ' conceptos).');
       }
     };
@@ -86,63 +100,79 @@
     document.getElementById('confirmarJuegoBtn').onclick = function () { empezarPartida(); };
   };
 
-  var requiereSorteo = false;
+  /* =================== SORTEO DEL EQUIPO INICIAL =================== */
+  var saltarPantallaTurno = false;
 
   function empezarPartida() {
     Motor.reiniciarRonda();
     Sonido.transicion();
-    refs.playIntro.classList.add('show');
-    var cont = document.getElementById('playIntroContent');
     var equipos = Motor.getEquipos();
+    var cont = document.getElementById('playIntroContent');
+    refs.playIntro.classList.add('show');
     cont.innerHTML =
-      '<div style="font-size:34px;font-weight:900">' + juegoSeleccionado.emoji + ' ' + juegoSeleccionado.titulo + '</div>' +
-      '<div style="font-size:16px;color:rgba(255,255,255,.6);margin:10px 0 24px;font-weight:700">Empieza jugando…</div>' +
-      '<div id="sorteoRow" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;max-width:600px"></div>' +
-      '<div id="sorteoResultado" style="margin-top:22px;font-size:26px;font-weight:900;color:var(--accent-lima);min-height:34px"></div>';
-    var row = document.getElementById('sorteoRow');
-    row.innerHTML = equipos.map(function (eq) {
-      return '<div class="sorteo-chip" style="background:#1f2e38;border:3px solid transparent;border-radius:16px;padding:14px 18px;display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform .12s,border-color .12s;">' +
-        '<span class="emoji" style="font-size:26px">' + eq.emoji + '</span><span style="color:#fff;font-size:12px;font-weight:700">' + eq.nombre + '</span></div>';
-    }).join('');
+      '<div style="font-size:32px;font-weight:900">' + juegoSeleccionado.emoji + ' ' + juegoSeleccionado.titulo + '</div>' +
+      '<div style="font-size:16px;color:rgba(255,255,255,.6);margin:10px 0 26px;font-weight:700">Empieza jugando…</div>' +
+      '<div id="sorteoCard"><div id="sorteoCardInner"><span class="emoji">' + equipos[0].emoji + '</span><span class="name">' + equipos[0].nombre + '</span></div></div>' +
+      '<div id="sorteoResultado" style="margin-top:22px;min-height:56px"></div>';
 
-    var vueltas = 9 + Math.floor(Math.random() * 3);
+    var card = document.getElementById('sorteoCard');
+    var inner = document.getElementById('sorteoCardInner');
+    var vueltas = 8 + Math.floor(Math.random() * 3);
     var elegido = Math.floor(Math.random() * equipos.length);
-    var intervalo = 70;
-    var chips = row.querySelectorAll('.sorteo-chip');
+    var pausa = 15;
 
-    function paso(n) {
-      chips.forEach(function (c) { c.style.borderColor = 'transparent'; c.style.transform = 'scale(1)'; });
-      var i = n % chips.length;
-      chips[i].style.borderColor = 'var(--accent-cyan)';
-      chips[i].style.transform = 'scale(1.1)';
-      Sonido.clic();
-      if (n < vueltas) {
-        intervalo *= 1.12;
-        setTimeout(function () { paso(n + 1); }, intervalo);
-      } else {
-        chips.forEach(function (c) { c.style.borderColor = 'transparent'; c.style.transform = 'scale(1)'; });
-        chips[elegido].style.borderColor = 'var(--accent-lima)';
-        chips[elegido].style.transform = 'scale(1.15)';
-        Motor.activarEquipo(elegido);
-        Sonido.avanzar();
-        document.getElementById('sorteoResultado').textContent = '¡Empieza ' + equipos[elegido].emoji + ' ' + equipos[elegido].nombre + '!';
-        requiereSorteo = true;
-        setTimeout(function () {
-          refs.playIntro.classList.remove('show');
-          Motor.setFase('JUGANDO');
-          UI.render();
-        }, 1100);
-      }
+    function tick(n) {
+      inner.classList.add('flip');
+      setTimeout(function () {
+        var eq = equipos[n % equipos.length];
+        inner.querySelector('.emoji').textContent = eq.emoji;
+        inner.querySelector('.name').textContent = eq.nombre;
+        inner.classList.remove('flip');
+        Sonido.clic();
+        if (n < vueltas) {
+          pausa *= 1.32;
+          setTimeout(function () { tick(n + 1); }, 130 + pausa);
+        } else {
+          var elegidoEq = equipos[elegido];
+          inner.querySelector('.emoji').textContent = elegidoEq.emoji;
+          inner.querySelector('.name').textContent = elegidoEq.nombre;
+          card.classList.add('final');
+          Motor.activarEquipo(elegido);
+          Sonido.avanzar();
+          document.getElementById('sorteoResultado').innerHTML =
+            '<div style="font-size:26px;font-weight:900;color:var(--accent-lima);margin-bottom:16px">¡Empieza ' + elegidoEq.emoji + ' ' + elegidoEq.nombre + '!</div>' +
+            '<button class="big-cta" id="vamosAllaBtn">▶ ¡Vamos allá!</button>';
+          document.getElementById('vamosAllaBtn').onclick = lanzarTransicionFinal;
+        }
+      }, 130);
     }
-    setTimeout(function () { paso(0); }, 500);
+    setTimeout(function () { tick(0); }, 400);
+  }
+
+  function lanzarTransicionFinal() {
+    Sonido.transicion();
+    var cont = document.getElementById('playIntroContent');
+    cont.innerHTML = '<div class="txt">¡A JUGAR!</div>';
+    setTimeout(function () {
+      refs.playIntro.classList.remove('show');
+      saltarPantallaTurno = true;
+      Motor.setFase('JUGANDO');
+      UI.render();
+    }, 750);
   }
 
   /* =================== JUGANDO =================== */
+  var preguntasEnRacha = 0;
+
   UI.screens.JUGANDO = function () {
     renderTeamsPanel(true);
-    var esInicio = requiereSorteo;
-    requiereSorteo = false;
-    irAPreparacion(esInicio);
+    if (saltarPantallaTurno) {
+      saltarPantallaTurno = false;
+      preguntasEnRacha = 0;
+      setTimeout(renderReto, 250);
+    } else {
+      irAPreparacion(false);
+    }
   };
 
   function renderTeamsPanel(animar) {
@@ -157,14 +187,8 @@
         '</div>';
     }).join('');
     var cards = refs.teamsPanel.querySelectorAll('.team-card');
-    if (animar) {
-      cards.forEach(function (c, i) { setTimeout(function () { c.classList.add('appear'); }, i * 80); });
-    } else {
-      // sin escalonado, pero SIEMPRE visibles: si no, al re-pintar (cambio de
-      // turno, puntuación...) las tarjetas nuevas nacían en opacity:0 y no
-      // se volvían a mostrar nunca — ese era el bug de "los equipos desaparecen".
-      cards.forEach(function (c) { c.classList.add('appear'); });
-    }
+    if (animar) cards.forEach(function (c, i) { setTimeout(function () { c.classList.add('appear'); }, i * 80); });
+    else cards.forEach(function (c) { c.classList.add('appear'); });
   }
   Motor.on('puntuacion:cambio', function (d) {
     var el = document.getElementById('score-' + d.equipo.id);
@@ -173,6 +197,7 @@
 
   function irAPreparacion(esInicio) {
     Motor.setEstado('PREPARACION');
+    preguntasEnRacha = 0;
     mostrarTurno(Motor.getEquipoActivo(), esInicio);
   }
   function mostrarTurno(equipo, esInicio) {
@@ -192,6 +217,7 @@
   }
   Motor.on('turno:siguiente', function (d) {
     if (Motor.getFase() !== 'JUGANDO') return;
+    preguntasEnRacha = 0;
     mostrarTurno(d.siguiente, false);
   });
 
@@ -208,7 +234,9 @@
       if (!pregunta) {
         refs.stageContent.innerHTML = '<div class="muted">No hay más preguntas disponibles en el contenido cargado.</div>';
       } else {
-        refs.stageContent.innerHTML = '<h2 style="text-align:center;max-width:640px;font-size:26px">' + pregunta.question + '</h2>';
+        refs.stageContent.innerHTML =
+          '<div class="muted" style="margin-bottom:8px">' + equipo.emoji + ' ' + equipo.nombre + ' · pregunta ' + (preguntasEnRacha + 1) + ' de 3</div>' +
+          '<h2 style="text-align:center;max-width:640px;font-size:26px">' + pregunta.question + '</h2>';
       }
       renderControles(equipo, pregunta);
       requestAnimationFrame(function () { refs.stageContent.classList.add('show'); });
@@ -253,45 +281,95 @@
     document.getElementById('btnOk').onclick = function () { evaluar(true, pregunta, equipo, 10); };
     document.getElementById('btnFail').onclick = function () { evaluar(false, pregunta, equipo, 0); };
     document.getElementById('btnGreat').onclick = function () { evaluar(true, pregunta, equipo, 15); };
-    document.getElementById('btnPlus').onclick = function () { Sonido.clic(); Motor.sumarPuntos(equipo.id, 5); };
+    document.getElementById('btnPlus').onclick = function () { Sonido.clic(); volarPuntos(equipo, 5); };
     document.getElementById('btnMinus').onclick = function () { Sonido.clic(); Motor.sumarPuntos(equipo.id, -5); };
     document.getElementById('btnPause').onclick = function () { Sonido.clic(); Motor.pausarTemporizador(); };
-    document.getElementById('btnNext').onclick = function () { Sonido.clic(); Motor.detenerTemporizador(); Motor.siguienteEquipo(); };
+    document.getElementById('btnNext').onclick = function () { Sonido.clic(); Motor.detenerTemporizador(); preguntasEnRacha = 0; Motor.siguienteEquipo(); };
   }
 
-  function celebrarAcierto() {
-    var burst = document.createElement('div');
-    burst.className = 'celebra-burst';
-    burst.innerHTML = '<div class="big-check">🎉</div>';
-    var colores = ['#CFFF04', '#7FE0FF', '#FFD700', '#FF2D55'];
-    for (var i = 0; i < 16; i++) {
-      var bit = document.createElement('div');
-      bit.className = 'confetti-bit';
-      var ang = Math.random() * Math.PI * 2, dist = 60 + Math.random() * 120;
-      bit.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
-      bit.style.setProperty('--dy', Math.sin(ang) * dist + 'px');
-      bit.style.setProperty('--rot', (Math.random() * 360) + 'deg');
-      bit.style.background = colores[i % colores.length];
-      burst.appendChild(bit);
+  /* ---- Feedback grande de acierto/fallo (mismo peso visual que "tiempo agotado") ---- */
+  function mostrarFeedbackGrande(tipo, titulo, emoji, cb) {
+    var el = document.getElementById('feedbackBanner');
+    el.className = tipo + ' shake';
+    el.style.display = 'flex';
+    el.innerHTML = '<div class="fb-emoji">' + emoji + '</div><div class="fb-title">' + titulo + '</div>';
+    if (tipo === 'ok') {
+      var conf = document.createElement('div');
+      conf.className = 'confetti-full';
+      var colores = ['#CFFF04', '#7FE0FF', '#FFD700', '#FF2D55'];
+      for (var i = 0; i < 26; i++) {
+        var bit = document.createElement('div');
+        bit.className = 'bit';
+        bit.style.left = (Math.random() * 100) + '%';
+        bit.style.background = colores[i % colores.length];
+        bit.style.animationDuration = (0.9 + Math.random() * 0.5) + 's';
+        bit.style.animationDelay = (Math.random() * 0.25) + 's';
+        conf.appendChild(bit);
+      }
+      el.appendChild(conf);
     }
-    refs.stageContent.appendChild(burst);
-    setTimeout(function () { burst.remove(); }, 850);
+    setTimeout(function () {
+      el.style.display = 'none';
+      el.classList.remove('shake');
+      if (cb) cb();
+    }, 1000);
+  }
+
+  /* ---- Puntos que vuelan físicamente hasta la tarjeta del equipo ---- */
+  function volarPuntos(equipo, puntos) {
+    if (puntos <= 0) { Motor.sumarPuntos(equipo.id, puntos); return; }
+    var scoreEl = document.getElementById('score-' + equipo.id);
+    if (!scoreEl) { Motor.sumarPuntos(equipo.id, puntos); return; }
+    var destRect = scoreEl.getBoundingClientRect();
+    var startRect = refs.stageContent.getBoundingClientRect();
+    var el = document.createElement('div');
+    el.className = 'punto-volador';
+    el.textContent = '+' + puntos;
+    var startX = startRect.left + startRect.width / 2;
+    var startY = startRect.top + startRect.height / 2;
+    el.style.left = startX + 'px';
+    el.style.top = startY + 'px';
+    el.style.transform = 'translate(-50%,-50%) scale(1)';
+    el.style.opacity = '1';
+    document.body.appendChild(el);
+    var dx = (destRect.left + destRect.width / 2) - startX;
+    var dy = (destRect.top + destRect.height / 2) - startY;
+    requestAnimationFrame(function () {
+      el.style.transform = 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(.5)';
+      el.style.opacity = '0.15';
+    });
+    setTimeout(function () {
+      el.remove();
+      Motor.sumarPuntos(equipo.id, puntos);
+    }, 700);
   }
 
   function evaluar(acierto, pregunta, equipo, puntos) {
     Motor.detenerTemporizador();
     Motor.setEstado('FEEDBACK');
-    if (pregunta) {
-      Motor.registrarResultado(equipo.id, pregunta.concept_id, acierto, pregunta.type);
-      if (acierto) { Sonido.acierto(); celebrarAcierto(); }
-      else { Sonido.fallo(); refs.stageContent.classList.add('flash-fail'); }
+    if (pregunta) Motor.registrarResultado(equipo.id, pregunta.concept_id, acierto, pregunta.type);
+
+    if (acierto) {
+      Sonido.acierto();
+      mostrarFeedbackGrande('ok', '¡GENIAL!', '🎉');
+      volarPuntos(equipo, puntos);
+      preguntasEnRacha++;
+      Motor.incrementarRonda();
+      setTimeout(function () {
+        if (Motor.objetivoAlcanzado()) { irAResultados(); return; }
+        if (preguntasEnRacha < 3) renderReto();
+        else Motor.siguienteEquipo();
+      }, 1050);
+    } else {
+      Sonido.fallo();
+      mostrarFeedbackGrande('fail', 'RESPUESTA INCORRECTA', '😬');
+      preguntasEnRacha = 0;
+      Motor.incrementarRonda();
+      setTimeout(function () {
+        if (Motor.objetivoAlcanzado()) irAResultados();
+        else Motor.siguienteEquipo();
+      }, 1050);
     }
-    Motor.sumarPuntos(equipo.id, acierto ? puntos : 0);
-    Motor.incrementarRonda();
-    setTimeout(function () {
-      if (Motor.objetivoAlcanzado()) irAResultados();
-      else Motor.siguienteEquipo();
-    }, 900);
   }
 
   /* =================== RESULTADOS / TROFEO =================== */

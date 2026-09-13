@@ -69,7 +69,8 @@ var UI = (function () {
     var colon = document.getElementById('introColon');
     var rest = document.getElementById('introRest');
     chip.textContent = 'FP';
-    chip.classList.remove('junto');
+    chip.classList.remove('junto', 'pulse');
+    document.getElementById('introSeq').classList.remove('impacto');
     colon.classList.remove('gone');
     rest.classList.remove('reveal');
     rest.textContent = '';
@@ -77,7 +78,7 @@ var UI = (function () {
     setTimeout(function () {
       colon.classList.add('gone');
       chip.classList.add('pulse');
-      setTimeout(function () { chip.textContent = 'XP'; }, 160);
+      setTimeout(function () { chip.textContent = 'XP'; }, 200);
     }, 900);
 
     setTimeout(function () {
@@ -85,7 +86,10 @@ var UI = (function () {
       rest.classList.add('reveal');
     }, 1750);
 
-    setTimeout(function () { chip.classList.add('junto'); }, 2650);
+    setTimeout(function () {
+      chip.classList.add('junto');
+      document.getElementById('introSeq').classList.add('impacto');
+    }, 2700);
 
     setTimeout(function () { document.getElementById('splashSub').classList.add('show'); }, 3150);
     setTimeout(function () {

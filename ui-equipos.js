@@ -10,11 +10,11 @@
   UI.screens.MODO = function () {
     refs.flowScreen.innerHTML =
       '<h2>¿Cómo jugáis hoy?</h2>' +
-      '<div class="muted">Elige el formato de la sesión. Todos los modos tienen un final claro.</div>' +
+      '<div class="muted">Elige un modo de juego</div>' +
       '<div class="mode-grid">' +
-      '<div class="mode-card" data-modo="libre"><div class="m-emoji emoji">🎯</div><div class="m-title">Modo libre</div><div class="m-desc">Elige cuántas rondas jugáis.</div></div>' +
-      '<div class="mode-card" data-modo="mejor3"><div class="m-emoji emoji">🥉</div><div class="m-title">Torneo · mejor de 3</div><div class="m-desc">3 rondas y termina sola.</div></div>' +
-      '<div class="mode-card" data-modo="mejor5"><div class="m-emoji emoji">🥇</div><div class="m-title">Torneo · mejor de 5</div><div class="m-desc">5 rondas y termina sola.</div></div>' +
+      '<div class="mode-card" data-modo="mejor3"><div class="m-emoji emoji">🥉</div><div class="m-title">Mejor de 3</div></div>' +
+      '<div class="mode-card" data-modo="mejor5"><div class="m-emoji emoji">🥇</div><div class="m-title">Mejor de 5</div></div>' +
+      '<div class="mode-card" data-modo="libre" style="flex-basis:100%"><div class="m-emoji emoji">🎯</div><div class="m-title">Modo libre</div></div>' +
       '</div>' +
       '<div id="rondasPickerBox"></div>';
 
@@ -81,14 +81,13 @@
     var cols = colsPara(efectivos);
 
     var celdas = equipos.map(function (eq) {
-      return '<div class="team-cell' + (eq.listo ? ' ready' : '') + '">' +
+      return '<div class="team-cell ready">' +
         '<span class="ready-badge">¡Listo!</span>' +
         '<button class="edit-slot" data-id="' + eq.id + '" title="Editar">✎</button>' +
         (equipos.length > 2 ? '<button class="remove-slot" data-id="' + eq.id + '">✕</button>' : '') +
         '<div class="emoji">' + eq.emoji + '</div>' +
         '<div class="name">' + eq.nombre + '</div>' +
-        (eq.portavoz ? '<div class="portavoz">🎤 ' + eq.portavoz + '</div>' : '') +
-        '<button class="listo-btn" data-id="' + eq.id + '">' + (eq.listo ? '✓ Listo' : 'Marcar listo') + '</button>' +
+        '<button class="listo-btn" data-id="' + eq.id + '">' + (eq.portavoz ? '🎤 ' + eq.portavoz : '+ Portavoz') + '</button>' +
         '</div>';
     });
     if (puedeAnadir) celdas.push('<div class="team-cell add-slot" id="addSlotBtn"><div style="font-size:26px">＋</div>Añadir equipo</div>');
@@ -97,10 +96,10 @@
 
     refs.flowScreen.innerHTML =
       '<h2>¿Qué equipos entran hoy en juego?</h2>' +
-      '<div class="muted">Añade entre 2 y 8 equipos y marcad "Listo" cuando estéis todos preparados.</div>' +
+      '<div class="muted">Añade hasta 8 equipos</div>' +
       '<div class="team-grid-wrap"><div class="team-grid cols-' + cols + '" id="teamGrid">' + celdas.join('') + '</div>' +
       '<div id="equiposError"></div>' +
-      '<button class="big-cta" id="continuarEquiposBtn" disabled>▶ Continuar</button></div>' +
+      '<button class="big-cta" id="continuarEquiposBtn">▶ Continuar</button></div>' +
       '<div class="flow-footer"><button class="flow-back" id="backModoBtn">◀ Volver</button></div>';
 
     document.getElementById('backModoBtn').onclick = function () { Motor.setFase('MODO'); UI.render(); };
@@ -109,23 +108,12 @@
     refs.flowScreen.querySelectorAll('.remove-slot').forEach(function (btn) {
       btn.onclick = function (e) { e.stopPropagation(); Motor.quitarEquipo(btn.getAttribute('data-id')); pintarEquiposFlow(); };
     });
-    refs.flowScreen.querySelectorAll('.edit-slot').forEach(function (btn) {
+    refs.flowScreen.querySelectorAll('.edit-slot, .listo-btn').forEach(function (btn) {
       btn.onclick = function (e) {
         e.stopPropagation();
         var eq = Motor.getEquipos().find(function (x) { return x.id === btn.getAttribute('data-id'); });
         Sonido.clic();
         abrirSelectorIdentidad(eq);
-      };
-    });
-    refs.flowScreen.querySelectorAll('.listo-btn').forEach(function (btn) {
-      btn.onclick = function (e) {
-        e.stopPropagation();
-        var id = btn.getAttribute('data-id');
-        var eq = Motor.getEquipos().find(function (x) { return x.id === id; });
-        var estabaListo = eq.listo;
-        Motor.marcarListo(id, !estabaListo);
-        if (!estabaListo) Sonido.listo(); else Sonido.clic();
-        pintarEquiposFlow();
       };
     });
     document.getElementById('continuarEquiposBtn').onclick = function () {
@@ -135,7 +123,6 @@
       Motor.setFase('CONTENIDO_GATE');
       UI.render();
     };
-    document.getElementById('continuarEquiposBtn').disabled = !Motor.todosListos();
   }
 
   /* ---- Overlay: elegir identidad rápida (predefinida) + portavoz ----

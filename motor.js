@@ -68,7 +68,7 @@ var Motor = (function () {
   function crearEquipoBase(nombre, emoji, portavoz) {
     equipos.push({
       id: 'T' + (equipos.length + 1), nombre: nombre, emoji: emoji, portavoz: portavoz || '',
-      puntos: 0, dificultad: 3, historial: [], rachaAciertos: 0, rachaErrores: 0, listo: false
+      puntos: 0, dificultad: 3, historial: [], rachaAciertos: 0, rachaErrores: 0, listo: true
     });
     persistir();
     emit('equipos:cambio', equipos);
@@ -122,7 +122,6 @@ var Motor = (function () {
 
   function confirmarInicio() {
     if (equipos.length < 2) return { ok: false, error: 'Hacen falta al menos 2 equipos.' };
-    if (!todosListos()) return { ok: false, error: 'Todos los equipos deben marcar "Listo".' };
     equipoActivoIdx = 0;
     persistir();
     emit('equipos:confirmados', equipos);
