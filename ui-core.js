@@ -69,51 +69,64 @@ var UI = (function () {
     var colon = document.getElementById('introColon');
     var rest = document.getElementById('introRest');
     chip.textContent = 'FP';
-    chip.classList.remove('pulse', 'junto');
-    chip.style.display = ''; chip.style.opacity = ''; chip.style.transition = '';
+    chip.classList.remove('pulse', 'junto', 'agita', 'explota');
+    chip.style.display = ''; chip.style.opacity = ''; chip.style.transition = ''; chip.style.transform = '';
     document.getElementById('introSeq').classList.remove('impacto', 'junto');
     colon.classList.remove('gone');
     colon.style.display = ''; colon.style.opacity = ''; colon.style.transition = '';
     rest.classList.remove('reveal');
     rest.style.width = ''; rest.style.transition = '';
     rest.textContent = '';
+    document.querySelectorAll('.intro-flash,.intro-particle').forEach(function (el) { el.remove(); });
 
     setTimeout(function () {
       colon.classList.add('gone');
-      chip.classList.add('pulse');
+      chip.classList.add('agita');
       setTimeout(function () { chip.textContent = 'XP'; }, 200);
     }, 900);
 
     setTimeout(function () {
-      rest.textContent = 'eriencia';
-      rest.classList.add('reveal');
-    }, 1750);
+      // explosión: el fondo se opaca un instante, salen partículas y el
+      // chip "XP" estalla; de ahí sale ya la palabra completa
+      var flash = document.createElement('div');
+      flash.className = 'intro-flash';
+      document.body.appendChild(flash);
+      requestAnimationFrame(function () { flash.classList.add('show'); });
 
-    setTimeout(function () {
-      var chipRect = chip.getBoundingClientRect();
-      var restRect = rest.getBoundingClientRect();
-      var distancia = restRect.left - chipRect.right; // hueco real en pantalla, medido de verdad
-      chip.style.transition = 'transform .32s cubic-bezier(.4,.1,.2,1)';
-      colon.style.transition = 'opacity .18s ease';
-      colon.style.opacity = '0';
-      chip.style.transform = 'translateX(' + distancia + 'px)';
+      var r = chip.getBoundingClientRect();
+      var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      for (var i = 0; i < 14; i++) {
+        var p = document.createElement('div');
+        p.className = 'intro-particle';
+        var ang = (Math.PI * 2 * i) / 14;
+        var dist = 60 + Math.random() * 50;
+        p.style.left = cx + 'px'; p.style.top = cy + 'px';
+        p.style.setProperty('--px', Math.cos(ang) * dist + 'px');
+        p.style.setProperty('--py', Math.sin(ang) * dist + 'px');
+        p.style.background = i % 2 ? '#7FE0FF' : '#CFFF04';
+        document.body.appendChild(p);
+        setTimeout(function (el) { return function () { el.remove(); }; }(p), 550);
+      }
+      chip.classList.add('explota');
+
       setTimeout(function () {
-        // impacto: sacudida + el chip pierde su caja y la palabra queda completa
-        document.getElementById('introSeq').classList.add('impacto');
+        flash.classList.remove('show');
+        setTimeout(function () { flash.remove(); }, 200);
         chip.style.display = 'none';
         colon.style.display = 'none';
         rest.style.transition = 'none';
         rest.style.width = 'auto';
         rest.textContent = 'XPeriencia';
-      }, 320);
-    }, 2700);
+        document.getElementById('introSeq').classList.add('impacto');
+      }, 380);
+    }, 1650);
 
-    setTimeout(function () { document.getElementById('splashSub').classList.add('show'); }, 3150);
+    setTimeout(function () { document.getElementById('splashSub').classList.add('show'); }, 2350);
     setTimeout(function () {
       document.getElementById('splashStartBtn').classList.add('show');
       if (Motor.haySesionGuardada()) document.getElementById('splashContinueBtn').classList.add('show');
       if (callback) callback();
-    }, 3500);
+    }, 2700);
   }
 
   function mostrarSplash() {

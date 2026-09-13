@@ -70,8 +70,14 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
   background:var(--accent-lima);color:var(--text-dark);padding:2px 18px;border-radius:16px;display:inline-block;
   transition:transform .45s cubic-bezier(.2,1.8,.3,1),background-color .4s ease,padding .4s ease,border-radius .4s ease,color .4s ease;
 }
-#introChip.pulse{animation:chipPulse .7s cubic-bezier(.3,1.9,.3,1);}
-@keyframes chipPulse{0%{transform:scale(1) rotate(0);}30%{transform:scale(1.35) rotate(-8deg);}55%{transform:scale(.9) rotate(5deg);}80%{transform:scale(1.12) rotate(-2deg);}100%{transform:scale(1) rotate(0);}}
+#introChip.agita{animation:chipAgita .35s ease;}
+@keyframes chipAgita{0%,100%{transform:translateX(0) rotate(0);}20%{transform:translateX(-6px) rotate(-6deg);}40%{transform:translateX(5px) rotate(5deg);}60%{transform:translateX(-4px) rotate(-4deg);}80%{transform:translateX(3px) rotate(3deg);}}
+#introChip.explota{animation:chipExplota .42s cubic-bezier(.2,.8,.3,1) forwards;}
+@keyframes chipExplota{0%{transform:scale(1);opacity:1;}35%{transform:scale(1.5);opacity:1;}100%{transform:scale(2.4);opacity:0;}}
+.intro-flash{position:fixed;inset:0;background:rgba(20,23,26,.4);z-index:40;opacity:0;pointer-events:none;transition:opacity .16s ease;}
+.intro-flash.show{opacity:1;}
+.intro-particle{position:fixed;width:10px;height:10px;background:var(--accent-lima);border-radius:50%;z-index:41;pointer-events:none;animation:particleBurst .5s ease-out forwards;}
+@keyframes particleBurst{to{transform:translate(var(--px),var(--py)) scale(0);opacity:0;}}
 #introChip.junto{background:transparent;color:var(--text-dark);padding:2px 0;border-radius:0;transform:none;}
 #introColon{transition:opacity .3s ease,width .3s ease;display:inline-block;}
 #introColon.gone{opacity:0;width:0;overflow:hidden;}
