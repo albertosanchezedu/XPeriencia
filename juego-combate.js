@@ -1,14 +1,16 @@
 /* ===================================================================
-   EL COMBATE — módulo independiente (v2: opción múltiple + furor)
+   EL COMBATE — módulo independiente (v3: simplificado)
+   Sin sala de castigo, sin temporizador por pregunta.
+   Acierto suma puntos, fallo resta. Cronómetro global de partida.
    =================================================================== */
 
 var Combate = (function () {
 
-  var DURACION_PREGUNTA = 30;
-  var DURACION_TOTAL = 180; // 3 minutos, cronómetro global compartido
+  var DURACION_TOTAL = 180;
   var RONDAS_PARA_ROTAR = 2;
-  var PREGUNTAS_PARA_SALIR_CASTIGO = 3;
   var RACHA_PARA_FUROR = 3;
+  var PUNTOS_ACIERTO = 10;
+  var PUNTOS_FALLO = -10;
 
   var area;
   var lados = {};
@@ -18,7 +20,6 @@ var Combate = (function () {
 
   function init() { area = document.getElementById('combateArea'); }
 
-  /* =================== SORTEO DE BANDOS =================== */
   function iniciar() {
     if (!area) init();
     usadasPorEquipo = {};
@@ -64,9 +65,8 @@ var Combate = (function () {
     }, 350 + todos.length * 280 + 300);
   }
 
-  /* =================== ARENA =================== */
   function crearEstadoLado(equipos) {
-    return { equipos: equipos, activoIdx: 0, streak: 0, rachaFuror: 0, enCastigo: false, castigoProgreso: 0, preguntaActual: null, restante: DURACION_PREGUNTA, handleTimer: null };
+    return { equipos: equipos, activoIdx: 0, streak: 0, rachaFuror: 0, preguntaActual: null };
   }
 
   function empezarArena(grupoRojo, grupoAzul) {
@@ -79,6 +79,7 @@ var Combate = (function () {
       '<div style="text-align:center;margin-bottom:8px"><span class="overall-timer" id="combateTotalTimer">3:00</span></div>' +
       '<div id="combateArena">' +
       '<div class="combate-lado rojo" id="lado-rojo"></div>' +
+      '<div class="combate-divisor"></div>' +
       '<div class="combate-lado azul" id="lado-azul"></div>' +
       '</div>';
 
@@ -117,7 +118,6 @@ var Combate = (function () {
     var l = lados[lado];
     var cont = document.getElementById('lado-' + lado);
     if (!cont) return;
-    cont.classList.toggle('castigo', l.enCastigo);
 
     var membrete = l.equipos.map(function (eq, i) {
       return '<span class="combate-miembro' + (i === (l.activoIdx % l.equipos.length) ? ' activo' : '') + '"><span class="emoji">' + eq.emoji + '</span>' + eq.nombre + '</span>';
@@ -126,38 +126,24 @@ var Combate = (function () {
     var furorBadge = l.rachaFuror >= RACHA_PARA_FUROR ? '<span class="combate-furor">🔥 FUROR x2</span>' : '';
 
     var opciones = (l.preguntaActual && l.preguntaActual.options) ? l.preguntaActual.options : [];
-    var maxOpc = l.enCastigo ? 3 : opciones.length;
-    var botonesHtml = opciones.slice(0, maxOpc).map(function (op, i) {
-      return '<button class="combate-opcion" data-i="' + i + '">' + op + '</button>';
+    var letras = ['A', 'B', 'C', 'D'];
+    var botonesHtml = opciones.map(function (op, i) {
+      return '<button class="combate-opcion" data-i="' + i + '"><span class="combate-opcion-letra">' + letras[i] + '</span>' + op + '</button>';
     }).join('');
-
-    var cuerpoHtml;
-    if (l.enCastigo) {
-      var pasos = '';
-      for (var i = 0; i < PREGUNTAS_PARA_SALIR_CASTIGO; i++) pasos += '<span class="paso' + (i < l.castigoProgreso ? ' hecho' : '') + '"></span>';
-      cuerpoHtml =
-        '<div class="combate-castigo-badge">🔒 SALA DE CASTIGO — ¡SALID YA!</div>' +
-        '<div class="muted">Todo el bando colabora: acertad ' + PREGUNTAS_PARA_SALIR_CASTIGO + ' seguidas para salir.</div>' +
-        '<div class="combate-castigo-progreso">' + pasos + '</div>' +
-        '<h3>' + (l.preguntaActual ? l.preguntaActual.question : '') + '</h3>' +
-        '<div class="combate-opciones">' + botonesHtml + '</div>';
-    } else {
-      cuerpoHtml =
-        furorBadge +
-        '<h3>' + (l.preguntaActual ? l.preguntaActual.question : 'Sin más preguntas disponibles') + '</h3>' +
-        '<div class="combate-opciones">' + botonesHtml + '</div>';
-    }
 
     cont.innerHTML =
       '<div class="combate-header">' +
       '<div class="combate-miembros">' + membrete + '</div>' +
       '<div class="combate-puntos" id="puntos-' + lado + '">' + puntosVisibles + '</div>' +
       '</div>' +
-      '<div class="carta-vf-barra' + (l.enCastigo ? ' oculto' : '') + '" style="margin:0 16px"><div class="carta-vf-barra-fill" id="barra-' + lado + '"></div></div>' +
-      '<div class="combate-cuerpo" id="cuerpo-' + lado + '">' + cuerpoHtml + '</div>';
+      '<div class="combate-cuerpo">' +
+      furorBadge +
+      '<h3>' + (l.preguntaActual ? l.preguntaActual.question : 'Sin más preguntas disponibles') + '</h3>' +
+      '<div class="combate-opciones-grid">' + botonesHtml + '</div>' +
+      '</div>';
 
     cont.querySelectorAll('.combate-opcion').forEach(function (btn) {
-      btn.onclick = function () { evaluarLado(lado, parseInt(btn.getAttribute('data-i'), 10)); };
+      btn.onclick = function () { evaluarLado(lado, parseInt(btn.getAttribute('data-i'), 10), btn); };
     });
   }
 
@@ -166,20 +152,6 @@ var Combate = (function () {
     var activo = equipoActivo(lado);
     l.preguntaActual = preguntaChoice(activo.id);
     renderLado(lado);
-    if (!l.enCastigo) { l.restante = DURACION_PREGUNTA; iniciarTimer(lado); }
-    else { clearInterval(l.handleTimer); var b = document.getElementById('barra-' + lado); if (b) b.style.transition = 'none', b.style.width = '100%'; }
-  }
-
-  function iniciarTimer(lado) {
-    var l = lados[lado];
-    clearInterval(l.handleTimer);
-    var barra = document.getElementById('barra-' + lado);
-    if (barra) { barra.style.transition = 'none'; barra.style.width = '100%'; void barra.offsetWidth; barra.style.transition = 'width ' + DURACION_PREGUNTA + 's linear'; barra.style.width = '0%'; }
-    l.handleTimer = setInterval(function () {
-      l.restante--;
-      if (l.restante === 10 || l.restante === 5) Sonido.clic();
-      if (l.restante <= 0) { clearInterval(l.handleTimer); Sonido.tiempoAgotado(); evaluarLado(lado, -1); }
-    }, 1000);
   }
 
   function sumarPuntosBando(lado, cantidad) {
@@ -188,52 +160,40 @@ var Combate = (function () {
     if (pEl) { pEl.textContent = lados[lado].equipos[0].puntos; pEl.classList.remove('bump'); void pEl.offsetWidth; pEl.classList.add('bump'); }
   }
 
-  function evaluarLado(lado, indiceElegido) {
+  function evaluarLado(lado, indiceElegido, btnEl) {
     if (!enJuego) return;
     var l = lados[lado];
-    clearInterval(l.handleTimer);
     var activo = equipoActivo(lado);
     var p = l.preguntaActual;
     var acierto = p && indiceElegido === p.correct_index;
 
     if (p) Motor.registrarResultado(activo.id, p.concept_id, acierto, p.type);
+    if (btnEl) btnEl.classList.add(acierto ? 'correcta' : 'incorrecta');
 
-    if (l.enCastigo) {
-      if (acierto) {
-        Sonido.acierto();
-        l.castigoProgreso++;
-        if (l.castigoProgreso >= PREGUNTAS_PARA_SALIR_CASTIGO) { l.enCastigo = false; l.castigoProgreso = 0; l.streak = 0; sumarPuntosBando(lado, 10); }
-      } else {
-        Sonido.fallo();
-        var cuerpo = document.getElementById('cuerpo-' + lado);
-        if (cuerpo) { cuerpo.classList.add('combate-flash-fail'); setTimeout(function () { cuerpo.classList.remove('combate-flash-fail'); }, 400); }
-      }
+    if (acierto) {
+      Sonido.acierto();
+      l.streak++;
+      l.rachaFuror++;
+      var puntos = l.rachaFuror >= RACHA_PARA_FUROR ? PUNTOS_ACIERTO * 2 : PUNTOS_ACIERTO;
+      sumarPuntosBando(lado, puntos);
+      if (l.streak >= RONDAS_PARA_ROTAR) { l.streak = 0; l.activoIdx++; }
     } else {
-      if (acierto) {
-        Sonido.acierto();
-        l.streak++;
-        l.rachaFuror++;
-        var puntos = l.rachaFuror >= RACHA_PARA_FUROR ? 20 : 10;
-        sumarPuntosBando(lado, puntos);
-        if (l.streak >= RONDAS_PARA_ROTAR) { l.streak = 0; l.activoIdx++; }
-      } else {
-        Sonido.fallo();
-        l.streak = 0; l.rachaFuror = 0;
-        l.enCastigo = true; l.castigoProgreso = 0;
-      }
+      Sonido.fallo();
+      l.streak = 0; l.rachaFuror = 0;
+      sumarPuntosBando(lado, PUNTOS_FALLO);
+      l.activoIdx++;
     }
 
     setTimeout(function () {
       if (!enJuego) return;
       siguientePregunta(lado);
-    }, 650);
+    }, 550);
   }
 
   function finalizar() {
     if (!enJuego) return;
     enJuego = false;
     clearInterval(handleTotal);
-    Object.keys(lados).forEach(function (lado) { clearInterval(lados[lado].handleTimer); });
     area.classList.add('hidden');
     area.innerHTML = '';
     Motor.setFase('RESULTADOS');

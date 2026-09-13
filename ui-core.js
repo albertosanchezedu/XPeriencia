@@ -81,16 +81,9 @@ var UI = (function () {
       setTimeout(function () { chip.textContent = 'XP'; }, 220);
     }, 500);
 
-    // 2) segunda agitación fuerte sobre "XP"
+    // 2) "XP" crece y se desvanece; detrás aparece la palabra completa
     setTimeout(function () {
       chip.classList.remove('agita');
-      void chip.offsetWidth;
-      chip.classList.add('agita2');
-    }, 1150);
-
-    // 3) "XP" crece y se desvanece; detrás aparece la palabra completa
-    setTimeout(function () {
-      chip.classList.remove('agita2');
       chip.classList.add('crece');
       rest.style.width = 'auto';
       rest.textContent = 'XPeriencia';
