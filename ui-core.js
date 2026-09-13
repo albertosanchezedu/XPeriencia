@@ -70,9 +70,12 @@ var UI = (function () {
     var rest = document.getElementById('introRest');
     chip.textContent = 'FP';
     chip.classList.remove('pulse', 'junto');
+    chip.style.display = ''; chip.style.opacity = ''; chip.style.transition = '';
     document.getElementById('introSeq').classList.remove('impacto', 'junto');
     colon.classList.remove('gone');
+    colon.style.display = ''; colon.style.opacity = ''; colon.style.transition = '';
     rest.classList.remove('reveal');
+    rest.style.width = ''; rest.style.transition = '';
     rest.textContent = '';
 
     setTimeout(function () {
@@ -87,8 +90,18 @@ var UI = (function () {
     }, 1750);
 
     setTimeout(function () {
-      document.getElementById('introSeq').classList.add('junto', 'impacto');
-      document.getElementById('introChip').classList.add('junto');
+      chip.style.transition = 'opacity .28s ease';
+      colon.style.transition = 'opacity .28s ease';
+      chip.style.opacity = '0';
+      colon.style.opacity = '0';
+      setTimeout(function () {
+        chip.style.display = 'none';
+        colon.style.display = 'none';
+        rest.style.transition = 'none';
+        rest.style.width = 'auto';
+        rest.textContent = 'XPeriencia';
+        document.getElementById('introSeq').classList.add('impacto');
+      }, 300);
     }, 2700);
 
     setTimeout(function () { document.getElementById('splashSub').classList.add('show'); }, 3150);
