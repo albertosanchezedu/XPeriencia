@@ -4,33 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>XPeriencia: La FP se juega</title>
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
+
+<!-- ============ PORTADA ============ -->
+<div id="splashScreen">
+  <div id="splashEmojis"></div>
+  <div class="splash-content">
+    <div class="splash-title">XPeriencia</div>
+    <div class="splash-sub">La FP se juega</div>
+    <button class="splash-start" id="splashStartBtn">▶ Empezar</button>
+    <button class="splash-continue hidden" id="splashContinueBtn">Continuar partida guardada</button>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
 <div id="app">
-
-  <div class="topbar">
-    <div class="brand">
-      <span class="b-title">XPeriencia</span>
-      <span class="b-sub">La FP se juega</span>
-    </div>
-    <div class="nav-actions">
-      <button class="nav-btn" id="contentBtn"><span class="ico">📚</span> Contenido</button>
-      <input type="file" id="contentFile" accept=".txt,.json" class="hidden">
-      <button class="nav-btn primary" id="endBtn"><span class="ico">🏁</span> Finalizar y ver resultados</button>
-    </div>
+  <div class="title-chip">
+    <span class="t-main">XPeriencia</span>
+    <span class="t-sub">La FP se juega</span>
   </div>
 
-  <div id="teamsPanel"></div>
+  <!-- Pantallas de flujo previas al juego -->
+  <div id="flowScreen" class="flow-screen hidden"></div>
 
-  <div id="stage">
-    <div id="timerWrap"><span>⏱</span><span class="t-num">--</span></div>
-    <div id="timeUpBanner"></div>
-    <div id="turnScreen"></div>
+  <!-- Juego a pantalla completa -->
+  <div id="gameArea" class="hidden" style="display:flex;flex-direction:column;height:100%;">
+    <div id="teamsPanel"></div>
+    <div id="stage">
+      <div id="timerWrap"><span>⏱</span><span class="t-num">--</span></div>
+      <div id="timeUpBanner"></div>
+      <div id="turnScreen"></div>
+      <div id="stageContent"></div>
+    </div>
+    <div id="teacherControls"></div>
   </div>
-
-  <div id="teacherControls"></div>
-
 </div>
 
 <!-- Overlay: elegir identidad de un nuevo equipo -->
@@ -38,17 +47,19 @@
   <div class="identity-modal">
     <h3>Elige la identidad del equipo</h3>
     <div class="identity-grid" id="identityGrid"></div>
-    <button class="nav-btn" id="identityCancel" style="margin-top:14px">Cancelar</button>
+    <button class="flow-back" id="identityCancel" style="margin-top:14px">Cancelar</button>
   </div>
 </div>
 
-<!-- Chivatini · aviso rápido (arriba, no bloquea) -->
+<input type="file" id="contentFile" accept=".txt,.json" class="hidden">
+
+<!-- Chivatini: aviso rápido -->
 <div id="chivaBanner">
   <div class="b-portrait">🤖</div>
   <div class="b-txt"></div>
 </div>
 
-<!-- Chivatini · modal importante (oscurece el resto de la pantalla) -->
+<!-- Chivatini: modal importante -->
 <div id="chivaOverlay">
   <div class="chiva-modal-lg">
     <div class="chiva-head">
@@ -59,20 +70,24 @@
       <div class="chiva-txt" id="chivaTxt"></div>
       <div class="chiva-arrow" id="chivaArrow">▸</div>
     </div>
+    <button class="chiva-confirm-btn" id="chivaConfirmBtn">Vamos</button>
   </div>
 </div>
 
-<!-- Botón de ayuda / créditos -->
-<button class="help-btn" id="helpBtn" title="Ayuda e info">?</button>
+<!-- Icono único: ayuda + contenido + finalizar + menú -->
+<button class="help-btn" id="helpBtn" title="Menú">?</button>
 <div class="help-panel" id="helpPanel">
-  Creado por <strong style="color:#7FE0FF">Alberto Sánchez Cabanillas</strong><br>
-  Docente de Comercio y Marketing<br>
-  <a href="https://www.linkedin.com/in/albertosanchezcabanillas/" target="_blank">LinkedIn</a> ·
-  <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a>
+  <div class="hp-actions" id="hpActions"></div>
+  <div class="hp-divider">
+    Creado por <strong style="color:#7FE0FF">Alberto Sánchez Cabanillas</strong><br>
+    Docente de Comercio y Marketing<br>
+    <a href="https://www.linkedin.com/in/albertosanchezcabanillas/" target="_blank">LinkedIn</a> ·
+    <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a>
+  </div>
 </div>
 
-<script src="motor.js?v=3"></script>
-<script src="chivatini.js?v=3"></script>
-<script src="ui.js?v=3"></script>
+<script src="motor.js?v=4"></script>
+<script src="chivatini.js?v=4"></script>
+<script src="ui.js?v=4"></script>
 </body>
 </html>
