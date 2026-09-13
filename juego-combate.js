@@ -4,7 +4,7 @@
 
 var Combate = (function () {
 
-  var DURACION_PREGUNTA = 20;
+  var DURACION_PREGUNTA = 30;
   var DURACION_TOTAL = 180; // 3 minutos, cronómetro global compartido
   var RONDAS_PARA_ROTAR = 2;
   var PREGUNTAS_PARA_SALIR_CASTIGO = 3;
@@ -14,12 +14,14 @@ var Combate = (function () {
   var lados = {};
   var enJuego = false;
   var handleTotal = null, restanteTotal = DURACION_TOTAL;
+  var usadasPorEquipo = {};
 
   function init() { area = document.getElementById('combateArea'); }
 
   /* =================== SORTEO DE BANDOS =================== */
   function iniciar() {
     if (!area) init();
+    usadasPorEquipo = {};
     var equipos = Motor.getEquipos().slice();
     for (var i = equipos.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
@@ -103,7 +105,12 @@ var Combate = (function () {
     if (!contenido) return null;
     var pool = contenido.questions.filter(function (q) { return q.type === 'choice' && q.options && q.options.length >= 3; });
     if (!pool.length) pool = contenido.questions;
-    return Motor.seleccionarPorDificultad(pool, Motor.nivelDificultad(equipoId));
+    var vistas = usadasPorEquipo[equipoId];
+    var libres = vistas ? pool.filter(function (q) { return !vistas.has(q.id); }) : pool;
+    if (!libres.length) libres = pool;
+    var elegida = Motor.seleccionarPorDificultad(libres, Motor.nivelDificultad(equipoId));
+    if (elegida) (usadasPorEquipo[equipoId] = usadasPorEquipo[equipoId] || new Set()).add(elegida.id);
+    return elegida;
   }
 
   function renderLado(lado) {
@@ -146,7 +153,7 @@ var Combate = (function () {
       '<div class="combate-miembros">' + membrete + '</div>' +
       '<div class="combate-puntos" id="puntos-' + lado + '">' + puntosVisibles + '</div>' +
       '</div>' +
-      '<div class="carta-vf-barra" style="margin:0 16px"><div class="carta-vf-barra-fill" id="barra-' + lado + '"></div></div>' +
+      '<div class="carta-vf-barra' + (l.enCastigo ? ' oculto' : '') + '" style="margin:0 16px"><div class="carta-vf-barra-fill" id="barra-' + lado + '"></div></div>' +
       '<div class="combate-cuerpo" id="cuerpo-' + lado + '">' + cuerpoHtml + '</div>';
 
     cont.querySelectorAll('.combate-opcion').forEach(function (btn) {
@@ -158,9 +165,9 @@ var Combate = (function () {
     var l = lados[lado];
     var activo = equipoActivo(lado);
     l.preguntaActual = preguntaChoice(activo.id);
-    l.restante = DURACION_PREGUNTA;
     renderLado(lado);
-    iniciarTimer(lado);
+    if (!l.enCastigo) { l.restante = DURACION_PREGUNTA; iniciarTimer(lado); }
+    else { clearInterval(l.handleTimer); var b = document.getElementById('barra-' + lado); if (b) b.style.transition = 'none', b.style.width = '100%'; }
   }
 
   function iniciarTimer(lado) {

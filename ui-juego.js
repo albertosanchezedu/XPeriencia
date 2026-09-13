@@ -156,6 +156,7 @@
 
   function empezarPartida() {
     Motor.reiniciarRonda();
+    usadasPorEquipo = {};
     Sonido.transicion();
     var equipos = Motor.getEquipos();
     var cont = document.getElementById('playIntroContent');
@@ -298,13 +299,20 @@
   });
 
   var retoActual = null, equipoRetoActual = null;
-  var DURACION_CARTA = 15;
+  var DURACION_CARTA = 25;
+  var usadasPorEquipo = {};
 
   function preguntaVF(equipoId) {
     var contenido = Motor.getContenido();
     if (!contenido) return null;
     var vf = contenido.questions.filter(function (q) { return q.type === 'truefalse'; });
-    return Motor.seleccionarPorDificultad(vf.length ? vf : contenido.questions, Motor.nivelDificultad(equipoId));
+    var pool = vf.length ? vf : contenido.questions;
+    var vistas = usadasPorEquipo[equipoId];
+    var libres = vistas ? pool.filter(function (q) { return !vistas.has(q.id); }) : pool;
+    if (!libres.length) libres = pool;
+    var elegida = Motor.seleccionarPorDificultad(libres, Motor.nivelDificultad(equipoId));
+    if (elegida) (usadasPorEquipo[equipoId] = usadasPorEquipo[equipoId] || new Set()).add(elegida.id);
+    return elegida;
   }
 
   function renderReto() {

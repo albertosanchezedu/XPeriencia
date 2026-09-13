@@ -292,6 +292,7 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .carta-vf.in{transform:scale(1) translateY(0);opacity:1;}
 .carta-vf-barra{height:8px;border-radius:99px;background:rgba(20,23,26,.1);overflow:hidden;margin-bottom:18px;}
 .carta-vf-barra-fill{height:100%;background:var(--accent-lima);width:100%;}
+.carta-vf-barra.oculto{visibility:hidden;}
 .big-cta{background:var(--accent-lima);color:var(--text-dark);font-weight:700;font-size:16px;border:none;padding:14px 32px;border-radius:99px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.18);transition:transform .15s,filter .15s;display:flex;align-items:center;gap:8px;}
 .big-cta:disabled{opacity:.35;cursor:not-allowed;}
 .big-cta:not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.04);}
