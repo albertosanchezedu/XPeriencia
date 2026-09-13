@@ -18,6 +18,17 @@ var Combate = (function () {
   var handleTotal = null, restanteTotal = DURACION_TOTAL;
   var usadasPorEquipo = {};
 
+  var EMOJIS_FONDO = ['📦','🚚','🛒','🏬','📈','🏷️','💻','⚙️','🔧','🚗','🩺','🍽️','✂️','🎨','🌾','🖊️','🔬','📐'];
+  function pintarFondoCombate() {
+    var html = '';
+    for (var i = 0; i < 12; i++) {
+      var e = EMOJIS_FONDO[i % EMOJIS_FONDO.length];
+      var left = Math.random() * 96, delay = Math.random() * 20, dur = 18 + Math.random() * 12, size = 26 + Math.random() * 26;
+      html += '<span class="bg-float-emoji" style="left:' + left + '%;bottom:-60px;font-size:' + size + 'px;animation-duration:' + dur + 's;animation-delay:-' + delay + 's;">' + e + '</span>';
+    }
+    return '<div class="combate-bg-emojis">' + html + '</div>';
+  }
+
   function init() { area = document.getElementById('combateArea'); }
 
   function iniciar() {
@@ -75,8 +86,8 @@ var Combate = (function () {
     enJuego = true;
     restanteTotal = DURACION_TOTAL;
 
-    area.innerHTML =
-      '<div style="text-align:center;margin-bottom:8px"><span class="overall-timer" id="combateTotalTimer">3:00</span></div>' +
+    area.innerHTML = pintarFondoCombate() +
+      '<div style="text-align:center;margin-bottom:8px;position:relative;z-index:1"><span class="overall-timer" id="combateTotalTimer">3:00</span></div>' +
       '<div id="combateArena">' +
       '<div class="combate-lado rojo" id="lado-rojo"></div>' +
       '<div class="combate-divisor"></div>' +
