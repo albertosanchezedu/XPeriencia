@@ -12,12 +12,13 @@
       '<h2>¿Cómo jugáis hoy?</h2>' +
       '<div class="muted">Elige el formato de la sesión</div>' +
       '<div class="mode-grid">' +
-      '<div class="mode-card" data-modo="libre"><div class="m-emoji emoji">🎯</div><div class="m-title">Modo libre</div><div class="m-desc">Jugáis lo que queráis y finalizáis cuando decidáis.</div></div>' +
-      '<div class="mode-card" data-modo="mejor3"><div class="m-emoji emoji">🥉</div><div class="m-title">Torneo · mejor de 3</div><div class="m-desc">3 rondas y gana quien sume más puntos.</div></div>' +
-      '<div class="mode-card" data-modo="mejor5"><div class="m-emoji emoji">🥇</div><div class="m-title">Torneo · mejor de 5</div><div class="m-desc">5 rondas y gana quien sume más puntos.</div></div>' +
+      '<div class="mode-card" data-modo="libre"><div class="m-emoji emoji">🎯</div><div class="m-title">Modo libre</div><div class="m-desc">Jugáis lo que queráis y finalizáis cuando decidáis (usa "Finalizar" en el menú ?).</div></div>' +
+      '<div class="mode-card" data-modo="mejor3"><div class="m-emoji emoji">🥉</div><div class="m-title">Torneo · mejor de 3</div><div class="m-desc">3 rondas y termina sola: gana quien sume más puntos.</div></div>' +
+      '<div class="mode-card" data-modo="mejor5"><div class="m-emoji emoji">🥇</div><div class="m-title">Torneo · mejor de 5</div><div class="m-desc">5 rondas y termina sola: gana quien sume más puntos.</div></div>' +
       '</div>';
     refs.flowScreen.querySelectorAll('.mode-card').forEach(function (card) {
       card.onclick = function () {
+        Sonido.clic();
         Motor.setModo(card.getAttribute('data-modo'));
         Motor.setFase('EQUIPOS');
         UI.render();
@@ -52,9 +53,6 @@
 
   function pintarEquiposFlow() {
     var equipos = Motor.getEquipos();
-    // el hueco de "añadir" cuenta como una celda más a la hora de calcular
-    // cuántos huecos totales conviene mostrar, para que el botón de añadir
-    // nunca desaparezca al llegar a un número "redondo" de equipos (2,4,6)
     var puedeAnadir = equipos.length < 8;
     var totalParaCalculo = equipos.length + (puedeAnadir ? 1 : 0);
     var efectivos = slotsEfectivos(totalParaCalculo);
@@ -63,6 +61,7 @@
     var celdas = equipos.map(function (eq) {
       return '<div class="team-cell' + (eq.listo ? ' ready' : '') + '">' +
         '<span class="ready-badge">¡Listo!</span>' +
+        '<button class="edit-slot" data-id="' + eq.id + '" title="Editar">✎</button>' +
         (equipos.length > 2 ? '<button class="remove-slot" data-id="' + eq.id + '">✕</button>' : '') +
         '<div class="emoji">' + eq.emoji + '</div>' +
         '<div class="name">' + eq.nombre + '</div>' +
@@ -84,9 +83,17 @@
 
     document.getElementById('backModoBtn').onclick = function () { Motor.setFase('MODO'); UI.render(); };
     var addBtn = document.getElementById('addSlotBtn');
-    if (addBtn) addBtn.onclick = abrirSelectorIdentidad;
+    if (addBtn) addBtn.onclick = function () { Sonido.clic(); abrirSelectorIdentidad(null); };
     refs.flowScreen.querySelectorAll('.remove-slot').forEach(function (btn) {
       btn.onclick = function (e) { e.stopPropagation(); Motor.quitarEquipo(btn.getAttribute('data-id')); pintarEquiposFlow(); };
+    });
+    refs.flowScreen.querySelectorAll('.edit-slot').forEach(function (btn) {
+      btn.onclick = function (e) {
+        e.stopPropagation();
+        var eq = Motor.getEquipos().find(function (x) { return x.id === btn.getAttribute('data-id'); });
+        Sonido.clic();
+        abrirSelectorIdentidad(eq);
+      };
     });
     refs.flowScreen.querySelectorAll('.listo-btn').forEach(function (btn) {
       btn.onclick = function (e) {
@@ -100,41 +107,64 @@
     document.getElementById('continuarEquiposBtn').onclick = function () {
       var res = Motor.confirmarInicio();
       if (!res.ok) { document.getElementById('equiposError').innerHTML = '<div class="error-box">⚠️ ' + res.error + '</div>'; return; }
+      Sonido.avanzar();
       Motor.setFase('CONTENIDO_GATE');
       UI.render();
     };
     document.getElementById('continuarEquiposBtn').disabled = !Motor.todosListos();
   }
 
-  /* ---- Overlay: elegir preset o crear identidad propia ---- */
-  var emojiCicloIdx = 0;
-  function abrirSelectorIdentidad() {
-    var presets = Motor.presetsDisponibles();
-    UI.refs.identityGrid.innerHTML = presets.map(function (p) {
-      return '<div class="identity-opt" data-nombre="' + p.nombre + '"><div class="emoji">' + p.emoji + '</div><div class="name">' + p.nombre + '</div></div>';
-    }).join('');
-    UI.refs.identityGrid.querySelectorAll('.identity-opt').forEach(function (opt) {
-      opt.onclick = function () {
-        var nombre = opt.getAttribute('data-nombre');
-        var preset = presets.find(function (p) { return p.nombre === nombre; });
-        Motor.crearEquipoDesdePreset(preset);
-        UI.refs.identityOverlay.classList.remove('show');
-        pintarEquiposFlow();
-      };
-    });
+  /* ---- Overlay: elegir identidad rápida (predefinida) + portavoz ----
+     equipoExistente = null -> añadir nuevo equipo
+     equipoExistente = {...} -> editar identidad/portavoz de uno ya creado */
+  var presetElegido = null;
 
-    var emojiBtn = document.getElementById('emojiCycleBtn');
-    var libres = Motor.EMOJI_PALETTE.filter(function (e) { return Motor.emojisUsados().indexOf(e) === -1; });
-    emojiCicloIdx = 0;
-    emojiBtn.textContent = libres[0] || '❓';
-    emojiBtn.onclick = function () { emojiCicloIdx = (emojiCicloIdx + 1) % libres.length; emojiBtn.textContent = libres[emojiCicloIdx]; };
+  function abrirSelectorIdentidad(equipoExistente) {
+    var editando = !!equipoExistente;
+    document.getElementById('identityTitle').textContent = editando ? 'Editar equipo' : 'Elige la identidad del equipo';
+    var presets = Motor.presetsDisponibles(editando ? equipoExistente.id : undefined);
+    presetElegido = editando ? { nombre: equipoExistente.nombre, emoji: equipoExistente.emoji } : null;
 
-    document.getElementById('customNombre').value = '';
-    document.getElementById('customPortavoz').value = '';
-    document.getElementById('customError').innerHTML = '';
-    document.getElementById('customAddBtn').onclick = function () {
-      var res = Motor.crearEquipoPersonalizado(document.getElementById('customNombre').value, emojiBtn.textContent, document.getElementById('customPortavoz').value);
-      if (!res.ok) { document.getElementById('customError').innerHTML = '<div class="error-box">⚠️ ' + res.error + '</div>'; return; }
+    function pintarGrid() {
+      var opciones = presets.slice();
+      if (editando) opciones.unshift({ nombre: equipoExistente.nombre, emoji: equipoExistente.emoji });
+      UI.refs.identityGrid.innerHTML = opciones.map(function (p) {
+        var sel = presetElegido && presetElegido.nombre === p.nombre;
+        return '<div class="identity-opt' + (sel ? ' selected' : '') + '" data-nombre="' + p.nombre + '"><div class="emoji">' + p.emoji + '</div><div class="name">' + p.nombre + '</div></div>';
+      }).join('');
+      UI.refs.identityGrid.querySelectorAll('.identity-opt').forEach(function (opt) {
+        opt.onclick = function () {
+          var nombre = opt.getAttribute('data-nombre');
+          presetElegido = opciones.find(function (p) { return p.nombre === nombre; });
+          pintarGrid();
+          document.getElementById('portavozStep').classList.remove('hidden');
+        };
+      });
+    }
+    pintarGrid();
+
+    var portavozStep = document.getElementById('portavozStep');
+    var portavozInput = document.getElementById('portavozInput');
+    if (editando) {
+      portavozStep.classList.remove('hidden');
+      portavozInput.value = equipoExistente.portavoz || '';
+    } else {
+      portavozStep.classList.add('hidden');
+      portavozInput.value = '';
+    }
+
+    document.getElementById('portavozSaveBtn').onclick = function () {
+      if (!presetElegido) return;
+      if (editando) {
+        Motor.editarEquipo(equipoExistente.id, { preset: presetElegido, portavoz: portavozInput.value });
+      } else {
+        var res = Motor.crearEquipoDesdePreset(presetElegido);
+        if (res.ok) {
+          var nuevo = Motor.getEquipos()[Motor.getEquipos().length - 1];
+          if (portavozInput.value.trim()) Motor.editarEquipo(nuevo.id, { portavoz: portavozInput.value });
+        }
+      }
+      Sonido.avanzar();
       UI.refs.identityOverlay.classList.remove('show');
       pintarEquiposFlow();
     };

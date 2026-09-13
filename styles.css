@@ -23,8 +23,9 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .hidden{display:none !important;}
 .emoji{font-family:var(--emoji-font);}
 
-/* ---------- Título discreto ---------- */
-.title-chip{position:absolute;top:18px;left:24px;z-index:15;font-weight:900;font-size:16px;color:var(--text-dark);opacity:.85;}
+/* ---------- Título discreto (abajo-izquierda durante la partida) ---------- */
+.title-chip{position:absolute;top:18px;left:24px;z-index:15;font-weight:900;font-size:16px;color:var(--text-dark);opacity:.85;transition:top .25s ease,bottom .25s ease,left .25s ease,font-size .2s ease;}
+.title-chip.in-game{top:auto;bottom:14px;left:14px;font-size:13px;opacity:.6;}
 
 /* ===================================================================
    TRANSICIÓN ENTRE PANTALLAS
@@ -42,33 +43,34 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
    =================================================================== */
 #splashScreen{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 30% 20%,#c9e6f5,#AFD9EE 60%);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;text-align:center;}
 #splashEmojis{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
-.float-emoji{position:absolute;font-family:var(--emoji-font);font-size:38px;opacity:0;animation:floatUp linear infinite;}
+.float-emoji{position:absolute;font-family:var(--emoji-font);opacity:0;animation:floatUp linear infinite;will-change:transform;}
 @keyframes floatUp{
   0%{transform:translateY(0) translateX(0) rotate(0deg);opacity:0;}
-  8%{opacity:.3;}
-  92%{opacity:.3;}
-  100%{transform:translateY(-100vh) translateX(24px) rotate(20deg);opacity:0;}
+  6%{opacity:.35;}
+  94%{opacity:.35;}
+  100%{transform:translateY(-135vh) translateX(40px) rotate(30deg);opacity:0;}
 }
 .splash-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:220px;justify-content:center;}
 
-/* ---- Secuencia de arranque (FP: -> XP: -> XPeriencia) ---- */
-#introSeq{font-size:64px;font-weight:900;letter-spacing:-.01em;min-height:80px;display:flex;align-items:center;gap:6px;}
-#introSeq .logo-chip{background:var(--accent-lima);color:var(--text-dark);padding:4px 16px;border-radius:14px;font-size:.7em;}
-.intro-fade-out{animation:introFadeOut .35s ease forwards;}
-.intro-fade-in{animation:introFadeIn .4s cubic-bezier(.2,.9,.3,1.2) both;}
-@keyframes introFadeOut{to{opacity:0;transform:scale(.8) rotate(-4deg);}}
-@keyframes introFadeIn{from{opacity:0;transform:scale(.7) rotate(4deg);}to{opacity:1;transform:scale(1) rotate(0);}}
+/* ---- Título con chip "XP" fijo y el resto revelándose a la derecha ---- */
+#introSeq{font-size:72px;font-weight:900;letter-spacing:-.01em;display:flex;align-items:baseline;}
+#introChip{background:var(--accent-lima);color:var(--text-dark);padding:2px 18px;border-radius:16px;display:inline-block;transition:transform .28s cubic-bezier(.3,1.6,.4,1);}
+#introChip.pulse{animation:chipPulse .4s ease;}
+@keyframes chipPulse{0%{transform:scale(1);}45%{transform:scale(1.18) rotate(-3deg);}100%{transform:scale(1);}}
+#introColon{transition:opacity .25s ease,width .25s ease;display:inline-block;}
+#introColon.gone{opacity:0;width:0;overflow:hidden;}
+#introRest{display:inline-block;overflow:hidden;white-space:nowrap;width:0;transition:width .55s cubic-bezier(.2,.7,.2,1);}
+#introRest.reveal{width:6.2em;}
 
-.splash-title{font-size:64px;font-weight:900;letter-spacing:-.01em;animation:titleWiggle 3.5s ease-in-out infinite;}
-@keyframes titleWiggle{0%,100%{transform:rotate(0deg) translateY(0);}25%{transform:rotate(-1.2deg) translateY(-2px);}75%{transform:rotate(1.2deg) translateY(-2px);}}
-.splash-sub{font-size:24px;font-style:italic;font-weight:400;color:var(--text-muted-dark);margin-bottom:18px;opacity:0;animation:fadeInUp .5s ease .15s forwards;}
-@keyframes fadeInUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.splash-sub{font-size:24px;font-style:italic;font-weight:400;color:var(--text-muted-dark);margin-bottom:18px;opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s cubic-bezier(.2,.8,.3,1);}
+.splash-sub.show{opacity:1;transform:translateY(0);}
 
-.splash-start{background:var(--accent-lima);color:var(--text-dark);font-weight:900;font-size:20px;border:none;padding:18px 48px;border-radius:99px;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.22);transition:transform .15s;opacity:0;animation:popInBtn .5s cubic-bezier(.34,1.4,.4,1) .35s forwards,pulseBtn 2s ease-in-out 1s infinite;}
-@keyframes popInBtn{0%{opacity:0;transform:scale(.5);}100%{opacity:1;transform:scale(1);}}
-.splash-start:hover{transform:translateY(-3px) scale(1.05) rotate(-1deg);}
+.splash-start{background:var(--accent-lima);color:var(--text-dark);font-weight:900;font-size:20px;border:none;padding:18px 48px;border-radius:99px;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.22);opacity:0;transform:scale(.6);transition:opacity .45s cubic-bezier(.25,1,.3,1),transform .45s cubic-bezier(.25,1.4,.3,1);}
+.splash-start.show{opacity:1;transform:scale(1);animation:pulseBtn 2s ease-in-out 1s infinite;}
+.splash-start:hover{transform:translateY(-3px) scale(1.05) rotate(-1deg) !important;}
 @keyframes pulseBtn{0%,100%{box-shadow:0 10px 28px rgba(0,0,0,.22);}50%{box-shadow:0 10px 36px rgba(207,255,4,.55);}}
-.splash-continue{margin-top:14px;background:none;border:none;color:var(--text-muted-dark);font-weight:700;font-size:13px;text-decoration:underline;cursor:pointer;opacity:0;animation:fadeInUp .5s ease .55s forwards;}
+.splash-continue{margin-top:14px;background:none;border:none;color:var(--text-muted-dark);font-weight:700;font-size:13px;text-decoration:underline;cursor:pointer;opacity:0;transition:opacity .4s ease;}
+.splash-continue.show{opacity:1;}
 
 /* ===================================================================
    TRANSICIÓN "¡A JUGAR!" antes del primer turno
@@ -114,41 +116,50 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .team-cell.add-slot:hover{background:rgba(255,255,255,.5);border-color:var(--accent-lima);}
 .team-cell.filler{border:2px dashed rgba(20,23,26,.12);background:transparent;box-shadow:none;opacity:.4;}
 
-/* ---- Overlay: elegir/crear identidad ---- */
+/* ---- Overlay: elegir identidad (rápido) + portavoz ---- */
 .identity-overlay{position:fixed;inset:0;background:rgba(10,18,26,.55);z-index:80;display:none;align-items:center;justify-content:center;padding:20px;}
 .identity-overlay.show{display:flex;}
-.identity-modal{background:#fff;border-radius:var(--radius-l);padding:26px;max-width:680px;width:100%;box-shadow:var(--shadow-panel);text-align:center;max-height:88vh;overflow:auto;}
+.identity-modal{background:#fff;border-radius:var(--radius-l);padding:26px;max-width:640px;width:100%;box-shadow:var(--shadow-panel);text-align:center;max-height:88vh;overflow:auto;}
 .identity-modal h3{font-size:19px;margin-bottom:4px;}
 .identity-modal .sec-label{font-size:12px;font-weight:700;color:var(--text-muted-dark);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 10px;}
 .identity-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
 .identity-opt{background:var(--bg-app-soft);border:2px solid transparent;border-radius:var(--radius-m);padding:12px 16px;min-width:120px;cursor:pointer;display:flex;flex-direction:column;gap:4px;transition:transform .15s,border-color .15s,background .15s;}
 .identity-opt:hover{border-color:var(--accent-lima);background:#fff;transform:translateY(-2px);}
+.identity-opt.selected{border-color:var(--accent-lima);background:#fff;}
 .identity-opt .emoji{font-size:24px;font-family:var(--emoji-font);}
 .identity-opt .name{font-weight:700;font-size:13px;}
 
-.custom-form{display:flex;flex-direction:column;gap:10px;align-items:center;background:var(--bg-app-soft);border-radius:var(--radius-m);padding:16px;}
-.emoji-cycle{font-size:32px;font-family:var(--emoji-font);background:#fff;border:2px solid transparent;border-radius:50%;width:64px;height:64px;cursor:pointer;transition:border-color .15s;}
-.emoji-cycle:hover{border-color:var(--accent-lima);}
-.custom-form input[type=text]{border:none;border-radius:99px;padding:10px 18px;font-family:inherit;font-size:14px;font-weight:700;text-align:center;width:240px;}
-.custom-form .hint{font-size:11px;color:var(--text-muted-dark);}
+.portavoz-step{display:flex;flex-direction:column;gap:12px;align-items:center;background:var(--bg-app-soft);border-radius:var(--radius-m);padding:18px;margin-top:16px;}
+.portavoz-step input[type=text]{border:none;border-radius:99px;padding:10px 18px;font-family:inherit;font-size:14px;font-weight:700;text-align:center;width:260px;}
+.portavoz-step .hint{font-size:11px;color:var(--text-muted-dark);}
+
+/* ---- Lapicillo de edición sobre un equipo ya creado ---- */
+.edit-slot{position:absolute;top:-8px;left:-8px;background:var(--panel-dark);color:#fff;border:none;border-radius:50%;width:24px;height:24px;font-size:11px;cursor:pointer;}
 
 /* ===================================================================
    CONTENIDO / JUEGOS
    =================================================================== */
 .game-catalog{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:820px;}
-.game-card{background:#fff;border-radius:var(--radius-l);padding:22px;min-width:200px;cursor:pointer;box-shadow:var(--shadow-soft);border:3px solid transparent;transition:transform .15s,border-color .15s;}
+.game-card{background:#fff;border-radius:var(--radius-l);padding:22px;min-width:200px;cursor:pointer;box-shadow:var(--shadow-soft);border:3px solid transparent;transition:transform .15s,border-color .15s;position:relative;}
 .game-card:hover{transform:translateY(-3px);border-color:var(--accent-cyan);}
+.game-card.soon{opacity:.55;cursor:default;}
+.game-card.soon:hover{transform:none;border-color:transparent;}
+.game-card .soon-badge{position:absolute;top:-9px;right:-9px;background:var(--accent-orange);color:#fff;font-size:9.5px;font-weight:900;padding:3px 8px;border-radius:99px;box-shadow:0 3px 8px rgba(0,0,0,.2);}
 .game-card .g-emoji{font-size:34px;font-family:var(--emoji-font);}
 .game-card .g-title{font-weight:900;font-size:16px;margin-top:6px;}
 .game-desc-box{background:rgba(255,255,255,.6);border-radius:var(--radius-m);padding:14px 20px;max-width:640px;font-size:13.5px;color:var(--text-muted-dark);min-height:20px;}
+.content-loaded-box{background:#fff;border-radius:var(--radius-m);padding:16px 22px;box-shadow:var(--shadow-soft);font-size:14px;max-width:480px;}
+.content-loaded-box .ok-tag{color:#3E8A5B;font-weight:900;}
 
 /* ===================================================================
    ESCENARIO DE JUEGO
    =================================================================== */
-#gameArea{padding-bottom:26px;}
-#stage{flex:1;min-height:0;background:rgba(255,255,255,.42);border-radius:var(--radius-l);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:visible;padding:32px;}
-#teamsPanel{display:flex;gap:14px;flex-wrap:wrap;margin:14px 0 16px 0;flex-shrink:0;padding:2px 120px 2px 2px;justify-content:center;}
-.team-card{background:rgba(255,255,255,.6);border:2px solid transparent;border-radius:var(--radius-m);padding:10px 16px;min-width:140px;display:flex;flex-direction:column;gap:2px;position:relative;transition:all .2s;}
+#gameArea{padding-bottom:14px;}
+#stage{flex:1;min-height:0;background:rgba(255,255,255,.42);border-radius:var(--radius-l);display:flex;flex-direction:column;position:relative;overflow:hidden;}
+#stageContent{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;position:relative;}
+#teamsPanel{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 16px 0;flex-shrink:0;padding:2px 120px 2px 2px;justify-content:center;}
+.team-card{background:rgba(255,255,255,.6);border:2px solid transparent;border-radius:var(--radius-m);padding:10px 16px;min-width:140px;display:flex;flex-direction:column;gap:2px;position:relative;transition:all .2s;opacity:0;transform:translateY(-10px);}
+.team-card.appear{opacity:1;transform:translateY(0);}
 .team-card .t-name{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;}
 .team-card .t-emoji{font-size:20px;font-family:var(--emoji-font);}
 .team-card .t-portavoz{font-size:10.5px;color:var(--text-muted-dark);}
@@ -156,20 +167,28 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .team-card .t-score.bump{animation:scoreBump .35s ease;}
 @keyframes scoreBump{0%{transform:scale(1);}50%{transform:scale(1.25);color:var(--accent-orange);}100%{transform:scale(1);}}
 .team-card.active{border-color:var(--accent-lima);background:#fff;box-shadow:var(--shadow-soft);transform:translateY(-2px);}
+.team-card.appear.active{transform:translateY(-2px);}
 .team-card .now-playing{display:none;position:absolute;top:-13px;left:12px;background:var(--accent-lima);color:var(--text-dark);font-size:10.5px;font-weight:900;padding:3px 9px;border-radius:99px;box-shadow:0 4px 10px rgba(0,0,0,.18);}
 .team-card.active .now-playing{display:inline-block;animation:popIn .25s ease;}
 @keyframes popIn{0%{transform:scale(.4);opacity:0;}100%{transform:scale(1);opacity:1;}}
+.team-card.sorteo-flash{animation:sorteoFlash .18s ease;}
+@keyframes sorteoFlash{0%{box-shadow:0 0 0 0 rgba(207,255,4,0);}50%{box-shadow:0 0 0 6px rgba(207,255,4,.5);}100%{box-shadow:0 0 0 0 rgba(207,255,4,0);}}
 
-/* ---- Temporizador: más grande, aviso se despliega hacia la izquierda ---- */
-#timerWrap{position:absolute;top:0;right:16px;display:flex;flex-direction:row-reverse;align-items:center;gap:10px;background:var(--panel-dark);color:var(--text-light);padding:10px 20px;border-radius:99px;box-shadow:var(--shadow-panel);}
-#timerWrap .t-num{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;}
+/* ---- Temporizador: icono, tamaño y márgenes correctos ---- */
+#timerWrap{position:absolute;top:16px;right:16px;display:flex;flex-direction:row-reverse;align-items:center;gap:10px;background:var(--panel-dark);color:var(--text-light);padding:10px 20px;border-radius:99px;box-shadow:var(--shadow-panel);z-index:5;}
+#timerWrap .t-icon{font-family:var(--emoji-font);font-size:20px;}
+#timerWrap .t-num{font-size:32px;font-weight:900;font-variant-numeric:tabular-nums;min-width:1.3em;text-align:center;}
 #timerWrap.warn .t-num{color:var(--accent-orange);}
 #timerWrap.danger .t-num{color:var(--accent-red);animation:pulseDanger .6s infinite;}
 @keyframes pulseDanger{0%,100%{opacity:1;}50%{opacity:.4;}}
 #timerWarnText{max-width:0;overflow:hidden;white-space:nowrap;font-size:13px;font-weight:700;color:var(--accent-orange);transition:max-width .3s ease;}
 #timerWarnText.show{max-width:160px;}
 
-#timeUpBanner{display:none;position:absolute;inset:0;background:rgba(20,23,26,.85);color:#fff;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-size:36px;font-weight:900;z-index:20;border-radius:var(--radius-l);}
+#timeUpBanner{display:none;position:absolute;inset:0;background:rgba(60,10,15,.9);color:#fff;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-size:36px;font-weight:900;z-index:20;border-radius:var(--radius-l);}
+#timeUpBanner.shake{animation:catastrofeShake .5s ease;}
+@keyframes catastrofeShake{0%,100%{transform:translate(0,0);}15%{transform:translate(-8px,2px) rotate(-1deg);}30%{transform:translate(8px,-2px) rotate(1deg);}45%{transform:translate(-6px,1px);}60%{transform:translate(6px,-1px);}75%{transform:translate(-3px,0);}}
+#timeUpBanner .catastrofe-emoji{font-size:70px;font-family:var(--emoji-font);animation:catastrofeEmoji .6s ease;}
+@keyframes catastrofeEmoji{0%{transform:scale(0) rotate(0);}60%{transform:scale(1.3) rotate(-10deg);}100%{transform:scale(1) rotate(0);}}
 .timeup-actions{display:flex;gap:10px;margin-top:6px;}
 
 #turnScreen{position:absolute;inset:0;background:var(--panel-dark);display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:30;color:#fff;text-align:center;border-radius:var(--radius-l);}
@@ -177,8 +196,16 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 #turnScreen .team{font-size:44px;font-weight:900;display:flex;align-items:center;gap:14px;}
 #turnScreen .portavoz-call{font-size:16px;color:var(--accent-cyan);font-weight:700;}
 
-#teacherControls{display:flex;gap:8px;justify-content:center;margin:14px 0 8px;flex-shrink:0;flex-wrap:wrap;}
-.ctrl-btn{font-family:inherit;font-weight:700;font-size:14px;border:none;cursor:pointer;padding:12px 20px;border-radius:var(--radius-m);transition:transform .12s,filter .12s;display:flex;align-items:center;gap:7px;box-shadow:var(--shadow-soft);}
+/* ---- Celebración de acierto ---- */
+.celebra-burst{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;z-index:15;}
+.celebra-burst .big-check{font-size:90px;font-family:var(--emoji-font);animation:celebraPop .6s cubic-bezier(.2,1.6,.3,1);}
+@keyframes celebraPop{0%{transform:scale(0);opacity:0;}50%{transform:scale(1.3);opacity:1;}100%{transform:scale(1);opacity:0;}}
+.confetti-bit{position:absolute;top:50%;left:50%;width:8px;height:8px;border-radius:2px;animation:confettiFly .8s ease-out forwards;}
+@keyframes confettiFly{to{transform:translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0;}}
+
+/* ---- Controles docente: DENTRO del recuadro de juego, pegados abajo ---- */
+#teacherControls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;flex-shrink:0;padding:14px 18px;border-top:1px solid rgba(20,23,26,.08);}
+.ctrl-btn{font-family:inherit;font-weight:700;font-size:13.5px;border:none;cursor:pointer;padding:11px 18px;border-radius:var(--radius-m);transition:transform .12s,filter .12s;display:flex;align-items:center;gap:7px;box-shadow:var(--shadow-soft);}
 .ctrl-btn:hover{transform:translateY(-2px);filter:brightness(1.05);}
 .ctrl-btn.ok{background:var(--accent-lima);color:var(--text-dark);}
 .ctrl-btn.fail{background:var(--accent-red);color:#fff;}
@@ -199,14 +226,18 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .rank-row .pos{width:22px;color:var(--text-muted-dark);}
 .rank-row .pts{margin-left:auto;font-weight:900;}
 .rank-row:first-child{border:2px solid var(--accent-gold);}
-.results-box .crack{font-size:18px;font-weight:700;color:#3E5C8A;}
-.results-box .reforzar{font-size:18px;font-weight:700;color:var(--accent-red);}
+.stats-toggle-btn{background:rgba(255,255,255,.6);border:none;color:var(--text-dark);font-weight:700;font-size:13px;padding:9px 16px;border-radius:99px;cursor:pointer;box-shadow:var(--shadow-soft);}
+.stats-panel{max-height:0;overflow:hidden;transition:max-height .3s ease;width:100%;max-width:460px;}
+.stats-panel.open{max-height:200px;}
+.stats-panel .inner{background:rgba(255,255,255,.55);border-radius:var(--radius-m);padding:14px 18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;text-align:left;}
+.stats-panel .crack{color:#3E5C8A;font-weight:600;}
+.stats-panel .reforzar{color:var(--accent-red);font-weight:600;}
 
 /* ===================================================================
    CHIVATINI (solo dentro del juego: acierto/error/victoria/recuperación)
    =================================================================== */
-#chivaBanner{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(160%);background:var(--panel-dark);border:2px solid var(--panel-dark-border);border-radius:99px;padding:9px 20px 9px 12px;box-shadow:var(--shadow-panel);z-index:65;display:flex;align-items:center;gap:10px;max-width:min(520px,88vw);transition:transform .28s cubic-bezier(.2,.8,.3,1);}
-#chivaBanner.show{transform:translateX(-50%) translateY(0);}
+#chivaBanner{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(30px);opacity:0;visibility:hidden;background:var(--panel-dark);border:2px solid var(--panel-dark-border);border-radius:99px;padding:9px 20px 9px 12px;box-shadow:var(--shadow-panel);z-index:65;display:flex;align-items:center;gap:10px;max-width:min(520px,88vw);transition:transform .28s cubic-bezier(.2,.8,.3,1),opacity .22s ease,visibility 0s linear .28s;}
+#chivaBanner.show{transform:translateX(-50%) translateY(0);opacity:1;visibility:visible;transition:transform .28s cubic-bezier(.2,.8,.3,1),opacity .22s ease,visibility 0s;}
 #chivaBanner .b-portrait{font-size:20px;flex-shrink:0;font-family:var(--emoji-font);}
 #chivaBanner .b-txt{font-size:13.5px;color:#dff7ff;line-height:1.3;text-align:left;}
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>XPeriencia: La FP se juega</title>
-<link rel="stylesheet" href="styles.css?v=5">
+<link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
 
@@ -12,10 +12,9 @@
 <div id="splashScreen">
   <div id="splashEmojis"></div>
   <div class="splash-content">
-    <div id="introSeq"></div>
-    <div class="splash-title hidden" id="splashTitle">XPeriencia</div>
-    <div class="splash-sub hidden" id="splashSub">La FP se juega</div>
-    <button class="splash-start hidden" id="splashStartBtn">▶ Empezar</button>
+    <div id="introSeq"><span class="logo-chip" id="introChip">FP</span><span id="introColon">:</span><span id="introRest"></span></div>
+    <div class="splash-sub" id="splashSub">La FP se juega</div>
+    <button class="splash-start" id="splashStartBtn">▶ Empezar</button>
     <button class="splash-continue hidden" id="splashContinueBtn">Continuar partida guardada</button>
   </div>
 </div>
@@ -25,36 +24,31 @@
 
 <!-- ============ APP ============ -->
 <div id="app">
-  <div class="title-chip">XPeriencia</div>
+  <div class="title-chip" id="titleChip">XPeriencia</div>
 
   <div id="flowScreen" class="flow-screen hidden"></div>
 
   <div id="gameArea" class="hidden" style="display:flex;flex-direction:column;height:100%;">
     <div id="teamsPanel"></div>
     <div id="stage">
-      <div id="timerWrap"><span class="t-num">--</span><span id="timerWarnText"></span></div>
+      <div id="timerWrap"><span class="t-icon">⏱️</span><span class="t-num">--</span><span id="timerWarnText"></span></div>
       <div id="timeUpBanner"></div>
       <div id="turnScreen"></div>
       <div id="stageContent"></div>
+      <div id="teacherControls"></div>
     </div>
-    <div id="teacherControls"></div>
   </div>
 </div>
 
-<!-- Overlay: elegir/crear identidad -->
+<!-- Overlay: elegir identidad rápida + portavoz -->
 <div class="identity-overlay" id="identityOverlay">
   <div class="identity-modal">
-    <h3>Elige la identidad del equipo</h3>
-    <div class="sec-label">Elige rápido</div>
+    <h3 id="identityTitle">Elige la identidad del equipo</h3>
     <div class="identity-grid" id="identityGrid"></div>
-    <div class="sec-label">O crea el vuestro</div>
-    <div class="custom-form">
-      <button class="emoji-cycle" id="emojiCycleBtn">📦</button>
-      <div class="hint">Toca el símbolo para cambiarlo</div>
-      <input type="text" id="customNombre" placeholder="Nombre del equipo" maxlength="20">
-      <input type="text" id="customPortavoz" placeholder="Portavoz (opcional)" maxlength="24">
-      <button class="big-cta" id="customAddBtn">➕ Añadir este equipo</button>
-      <div id="customError"></div>
+    <div class="portavoz-step hidden" id="portavozStep">
+      <div class="hint">Portavoz (opcional, para juegos de un solo jugador)</div>
+      <input type="text" id="portavozInput" placeholder="Nombre del portavoz" maxlength="24">
+      <button class="big-cta" id="portavozSaveBtn">✓ Guardar</button>
     </div>
     <button class="flow-back" id="identityCancel" style="margin-top:14px">Cancelar</button>
   </div>
@@ -68,7 +62,7 @@
   <div class="b-txt"></div>
 </div>
 
-<!-- Chivatini: modal (victoria / recuperación) -->
+<!-- Chivatini: modal (recuperación, etc.) -->
 <div id="chivaOverlay">
   <div class="chiva-modal-lg">
     <div class="chiva-head">
@@ -94,10 +88,11 @@
   </div>
 </div>
 
-<script src="motor.js?v=5"></script>
-<script src="chivatini.js?v=5"></script>
-<script src="ui-core.js?v=5"></script>
-<script src="ui-equipos.js?v=5"></script>
-<script src="ui-juego.js?v=5"></script>
+<script src="motor.js?v=6"></script>
+<script src="sonido.js?v=6"></script>
+<script src="chivatini.js?v=6"></script>
+<script src="ui-core.js?v=6"></script>
+<script src="ui-equipos.js?v=6"></script>
+<script src="ui-juego.js?v=6"></script>
 </body>
 </html>

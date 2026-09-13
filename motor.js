@@ -45,6 +45,7 @@ var Motor = (function () {
   function getModo() { return modo; }
   var rondaActual = 0;
   function incrementarRonda() { rondaActual++; persistir(); return rondaActual; }
+  function reiniciarRonda() { rondaActual = 0; persistir(); }
   function getRondaActual() { return rondaActual; }
   function objetivoAlcanzado() { return modo.objetivoRondas !== null && rondaActual >= modo.objetivoRondas; }
 
@@ -52,8 +53,8 @@ var Motor = (function () {
   var equipos = [];
   var equipoActivoIdx = 0;
 
-  function presetsDisponibles() {
-    var usados = equipos.map(function (e) { return e.nombre.toLowerCase(); });
+  function presetsDisponibles(excluirId) {
+    var usados = equipos.filter(function (e) { return e.id !== excluirId; }).map(function (e) { return e.nombre.toLowerCase(); });
     return TEAM_PRESETS.filter(function (p) { return usados.indexOf(p.nombre.toLowerCase()) === -1; });
   }
   function emojisUsados() { return equipos.map(function (e) { return e.emoji; }); }
@@ -90,6 +91,21 @@ var Motor = (function () {
     equipoActivoIdx = 0;
     persistir();
     emit('equipos:cambio', equipos);
+  }
+
+  function editarEquipo(id, cambios) {
+    var eq = equipos.find(function (e) { return e.id === id; });
+    if (!eq) return { ok: false, error: 'Equipo no encontrado.' };
+    if (cambios.preset) {
+      var yaExiste = equipos.some(function (e) { return e.id !== id && e.nombre.toLowerCase() === cambios.preset.nombre.toLowerCase(); });
+      if (yaExiste) return { ok: false, error: 'Ese equipo ya está en juego.' };
+      eq.nombre = cambios.preset.nombre;
+      eq.emoji = cambios.preset.emoji;
+    }
+    if (typeof cambios.portavoz === 'string') eq.portavoz = cambios.portavoz.trim();
+    persistir();
+    emit('equipos:cambio', equipos);
+    return { ok: true };
   }
 
   function marcarListo(id, valor) {
@@ -272,8 +288,9 @@ var Motor = (function () {
     FASES: FASES, setFase: setFase, getFase: getFase,
     ESTADOS: ESTADOS, setEstado: setEstado, getEstado: getEstado,
     setModo: setModo, getModo: getModo,
-    incrementarRonda: incrementarRonda, getRondaActual: getRondaActual, objetivoAlcanzado: objetivoAlcanzado,
-    crearEquipoDesdePreset: crearEquipoDesdePreset, crearEquipoPersonalizado: crearEquipoPersonalizado, quitarEquipo: quitarEquipo,
+    incrementarRonda: incrementarRonda, reiniciarRonda: reiniciarRonda, getRondaActual: getRondaActual, objetivoAlcanzado: objetivoAlcanzado,
+    crearEquipoDesdePreset: crearEquipoDesdePreset, crearEquipoPersonalizado: crearEquipoPersonalizado,
+    quitarEquipo: quitarEquipo, editarEquipo: editarEquipo,
     marcarListo: marcarListo, todosListos: todosListos, confirmarInicio: confirmarInicio,
     getEquipos: getEquipos, getEquipoActivo: getEquipoActivo, getEquipoActivoIdx: getEquipoActivoIdx,
     activarEquipo: activarEquipo, siguienteEquipo: siguienteEquipo,

@@ -1,7 +1,5 @@
 /* ===================================================================
    UI CORE — referencias compartidas, portada, transiciones y menú.
-   Los demás archivos (ui-equipos.js, ui-juego.js) registran sus
-   pantallas en UI.screens y sus acciones del menú en UI.actions.
    =================================================================== */
 
 var UI = (function () {
@@ -20,67 +18,70 @@ var UI = (function () {
     identityOverlay: document.getElementById('identityOverlay'),
     identityGrid: document.getElementById('identityGrid'),
     contentFileInput: document.getElementById('contentFile'),
-    playIntro: document.getElementById('playIntro')
+    playIntro: document.getElementById('playIntro'),
+    titleChip: document.getElementById('titleChip')
   };
 
-  var screens = {};   // fase -> función de render, la rellenan otros archivos
-  var actions = {};   // acciones contextuales del menú único, las rellenan otros archivos
+  var screens = {};
+  var actions = {};
 
-  /* =================== PORTADA: secuencia de arranque =================== */
+  /* =================== PORTADA: emojis de fondo por toda la pantalla =================== */
   var EMOJIS_FONDO = [
-    '📦','🚚','🛒','🏬','📈','🏷️','🗃️','💼','🧾','📊',       // comercio y marketing
-    '💻','🖥️','⚙️','🔌','🔧','🚗','🧪','🩺','💉','🍽️',        // informática, electricidad, automoción, sanidad, hostelería
-    '💇','✂️','🧵','🎨','🌾','🖊️','🔬','🏗️','📐','🎭'         // imagen personal, textil, arte, agraria, administración, edificación...
+    '📦','🚚','🛒','🏬','📈','🏷️','🗃️','💼','🧾','📊',
+    '💻','🖥️','⚙️','🔌','🔧','🚗','🧪','🩺','💉','🍽️',
+    '💇','✂️','🧵','🎨','🌾','🖊️','🔬','🏗️','📐','🎭'
   ];
   function pintarEmojisFondo() {
     var cont = document.getElementById('splashEmojis');
     var html = '';
-    var total = 34;
+    var total = 30;
     for (var i = 0; i < total; i++) {
       var e = EMOJIS_FONDO[i % EMOJIS_FONDO.length];
-      var left = Math.random() * 100;
+      var left = Math.random() * 96;
       var delay = Math.random() * 16;
-      var dur = 12 + Math.random() * 12;
-      var size = 26 + Math.random() * 26;
-      html += '<span class="float-emoji" style="left:' + left + '%;font-size:' + size + 'px;animation-duration:' + dur + 's;animation-delay:-' + delay + 's;">' + e + '</span>';
+      var dur = 11 + Math.random() * 10;
+      var size = 34 + Math.random() * 40;
+      html += '<span class="float-emoji" style="left:' + left + '%;bottom:-80px;font-size:' + size + 'px;animation-duration:' + dur + 's;animation-delay:-' + delay + 's;">' + e + '</span>';
     }
     cont.innerHTML = html;
   }
   pintarEmojisFondo();
 
+  /* =================== Secuencia de intro: XP fijo, "eriencia" se despliega =================== */
   function reproducirIntro(callback) {
-    var seq = document.getElementById('introSeq');
-    var pasos = [
-      '<span class="logo-chip">FP</span><span>:</span>',
-      '<span class="logo-chip">XP</span><span>:</span>',
-      '<span class="logo-chip">XP</span>',
-      'XPeriencia'
-    ];
-    var i = 0;
-    seq.innerHTML = pasos[0];
-    seq.className = 'intro-fade-in';
-    function siguientePaso() {
-      i++;
-      if (i >= pasos.length) {
-        seq.classList.add('intro-fade-out');
-        setTimeout(function () {
-          seq.classList.add('hidden');
-          document.getElementById('splashTitle').classList.remove('hidden');
-          document.getElementById('splashSub').classList.remove('hidden');
-          document.getElementById('splashStartBtn').classList.remove('hidden');
-          if (Motor.haySesionGuardada()) document.getElementById('splashContinueBtn').classList.remove('hidden');
-          if (callback) callback();
-        }, 350);
-        return;
-      }
-      seq.classList.add('intro-fade-out');
-      setTimeout(function () {
-        seq.innerHTML = pasos[i];
-        seq.className = 'intro-fade-in';
-        setTimeout(siguientePaso, 420);
-      }, 260);
-    }
-    setTimeout(siguientePaso, 420);
+    var chip = document.getElementById('introChip');
+    var colon = document.getElementById('introColon');
+    var rest = document.getElementById('introRest');
+    chip.textContent = 'FP';
+
+    setTimeout(function () {
+      colon.classList.add('gone');
+      chip.classList.add('pulse');
+      setTimeout(function () { chip.textContent = 'XP'; }, 120);
+    }, 500);
+
+    setTimeout(function () {
+      rest.textContent = 'eriencia';
+      rest.classList.add('reveal');
+    }, 950);
+
+    setTimeout(function () { document.getElementById('splashSub').classList.add('show'); }, 1550);
+    setTimeout(function () {
+      document.getElementById('splashStartBtn').classList.add('show');
+      if (Motor.haySesionGuardada()) document.getElementById('splashContinueBtn').classList.add('show');
+      if (callback) callback();
+    }, 1850);
+  }
+
+  function mostrarEstadoFinalIntro() {
+    document.getElementById('introChip').textContent = 'XP';
+    document.getElementById('introColon').classList.add('gone');
+    var rest = document.getElementById('introRest');
+    rest.textContent = 'eriencia';
+    rest.classList.add('reveal');
+    document.getElementById('splashSub').classList.add('show');
+    document.getElementById('splashStartBtn').classList.add('show');
+    document.getElementById('splashContinueBtn').classList.toggle('show', Motor.haySesionGuardada());
   }
 
   var introYaVista = false;
@@ -88,29 +89,20 @@ var UI = (function () {
     refs.splashScreen.style.display = 'flex';
     refs.flowScreen.classList.add('hidden');
     refs.gameArea.classList.add('hidden');
-    if (!introYaVista) {
-      introYaVista = true;
-      document.getElementById('splashTitle').classList.add('hidden');
-      document.getElementById('splashSub').classList.add('hidden');
-      document.getElementById('splashStartBtn').classList.add('hidden');
-      document.getElementById('splashContinueBtn').classList.add('hidden');
-      reproducirIntro();
-    } else {
-      document.getElementById('introSeq').classList.add('hidden');
-      document.getElementById('splashTitle').classList.remove('hidden');
-      document.getElementById('splashSub').classList.remove('hidden');
-      document.getElementById('splashStartBtn').classList.remove('hidden');
-      document.getElementById('splashContinueBtn').classList.toggle('hidden', !Motor.haySesionGuardada());
-    }
+    refs.titleChip.classList.remove('in-game');
+    if (!introYaVista) { introYaVista = true; reproducirIntro(); }
+    else mostrarEstadoFinalIntro();
   }
 
   document.getElementById('splashStartBtn').onclick = function () {
+    Sonido.avanzar();
     Motor.reiniciarTodo();
     refs.splashScreen.style.display = 'none';
     Motor.setFase('MODO');
     render();
   };
   document.getElementById('splashContinueBtn').onclick = function () {
+    Sonido.clic();
     Motor.restaurarSesion();
     refs.splashScreen.style.display = 'none';
     render();
@@ -118,6 +110,7 @@ var UI = (function () {
 
   /* =================== TRANSICIÓN "A JUGAR" =================== */
   function mostrarTransicionJuego(callback) {
+    Sonido.avanzar();
     refs.playIntro.classList.add('show');
     setTimeout(function () {
       refs.playIntro.classList.remove('show');
@@ -125,22 +118,23 @@ var UI = (function () {
     }, 900);
   }
 
-  /* =================== RENDER PRINCIPAL (según fase) =================== */
+  /* =================== RENDER PRINCIPAL =================== */
   function render() {
     var fase = Motor.getFase();
     if (fase === 'SPLASH') { mostrarSplash(); return; }
     if (fase === 'JUGANDO') {
       refs.flowScreen.classList.add('hidden');
       refs.gameArea.classList.remove('hidden');
+      refs.titleChip.classList.add('in-game');
       if (screens.JUGANDO) screens.JUGANDO();
       renderHelpPanel();
       return;
     }
+    refs.titleChip.classList.remove('in-game');
     refs.gameArea.classList.add('hidden');
     refs.flowScreen.classList.remove('hidden');
     refs.flowScreen.classList.remove('enter');
     if (screens[fase]) screens[fase]();
-    // fuerza reflow para que la transición de entrada se aprecie siempre
     void refs.flowScreen.offsetWidth;
     requestAnimationFrame(function () { refs.flowScreen.classList.add('enter'); });
     renderHelpPanel();
@@ -149,7 +143,7 @@ var UI = (function () {
   /* =================== MENÚ ÚNICO ("?") =================== */
   var helpBtn = document.getElementById('helpBtn');
   var helpPanel = document.getElementById('helpPanel');
-  helpBtn.onclick = function (e) { e.stopPropagation(); renderHelpPanel(); helpPanel.classList.toggle('open'); };
+  helpBtn.onclick = function (e) { e.stopPropagation(); Sonido.clic(); renderHelpPanel(); helpPanel.classList.toggle('open'); };
   document.addEventListener('click', function (e) {
     if (helpPanel.classList.contains('open') && !helpPanel.contains(e.target) && e.target !== helpBtn) helpPanel.classList.remove('open');
   });
@@ -179,10 +173,6 @@ var UI = (function () {
 
   /* =================== ARRANQUE =================== */
   Chivatini.init();
-  // Restauramos el estado guardado en memoria (para saber si hay partida
-  // pendiente) pero SIN persistir ningún cambio de fase todavía: la
-  // portada se muestra siempre al cargar, y solo "Continuar" o "Empezar"
-  // deciden qué pasa con la partida guardada.
   Motor.restaurarSesion();
   mostrarSplash();
 
