@@ -271,6 +271,7 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 
 /* ---- Controles docente: DENTRO del recuadro de juego, pegados abajo ---- */
 #teacherControls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;flex-shrink:0;padding:10px 18px 22px;border-top:1px solid rgba(20,23,26,.08);}
+#teacherControls:empty{padding:0;border:none;}
 .controles-separados{display:flex;align-items:center;gap:0;width:100%;justify-content:center;}
 .controles-separados .grupo{display:flex;gap:10px;}
 .controles-separados .hueco-central{width:min(18vw,160px);flex-shrink:0;}

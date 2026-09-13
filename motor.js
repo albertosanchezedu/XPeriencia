@@ -297,6 +297,37 @@ var Motor = (function () {
     emit('app:reiniciada');
   }
 
+  /* ---------------- PLANTILLA DE EQUIPOS (persiste aunque se reinicie la app) ---------------- */
+  var PLANTILLA_KEY = 'motorfp_plantilla_equipos';
+  function guardarPlantilla() {
+    try {
+      var plantilla = equipos.map(function (e) { return { nombre: e.nombre, emoji: e.emoji, portavoz: e.portavoz }; });
+      localStorage.setItem(PLANTILLA_KEY, JSON.stringify(plantilla));
+    } catch (e) {}
+  }
+  function hayPlantilla() { try { return !!localStorage.getItem(PLANTILLA_KEY); } catch (e) { return false; } }
+  function cargarPlantilla() {
+    try {
+      var raw = localStorage.getItem(PLANTILLA_KEY);
+      if (!raw) return false;
+      var plantilla = JSON.parse(raw);
+      equipos = plantilla.map(function (p, i) {
+        return { id: 'T' + (i + 1), nombre: p.nombre, emoji: p.emoji, portavoz: p.portavoz || '', puntos: 0, dificultad: 3, historial: [], rachaAciertos: 0, rachaErrores: 0, listo: true };
+      });
+      persistir();
+      emit('equipos:cambio', equipos);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* ---------------- REINICIAR SOLO LA CLASIFICACIÓN (mismos equipos) ---------------- */
+  function reiniciarClasificacion() {
+    equipos.forEach(function (e) { e.puntos = 0; e.historial = []; e.rachaAciertos = 0; e.rachaErrores = 0; e.dificultad = 3; });
+    rondaActual = 0;
+    persistir();
+    emit('equipos:cambio', equipos);
+  }
+
   return {
     on: on, emit: emit,
     TEAM_PRESETS: TEAM_PRESETS, EMOJI_PALETTE: EMOJI_PALETTE,
@@ -317,6 +348,8 @@ var Motor = (function () {
     seleccionarPorDificultad: seleccionarPorDificultad, preguntaParaEquipo: preguntaParaEquipo,
     iniciarTemporizador: iniciarTemporizador, detenerTemporizador: detenerTemporizador, pausarTemporizador: pausarTemporizador,
     reanudarTemporizador: reanudarTemporizador, temporizadorActivo: temporizadorActivo,
-    persistir: persistir, haySesionGuardada: haySesionGuardada, restaurarSesion: restaurarSesion, reiniciarTodo: reiniciarTodo
+    persistir: persistir, haySesionGuardada: haySesionGuardada, restaurarSesion: restaurarSesion, reiniciarTodo: reiniciarTodo,
+    guardarPlantilla: guardarPlantilla, hayPlantilla: hayPlantilla, cargarPlantilla: cargarPlantilla,
+    reiniciarClasificacion: reiniciarClasificacion
   };
 })();

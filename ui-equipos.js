@@ -97,12 +97,15 @@
     refs.flowScreen.innerHTML =
       '<h2>¿Qué equipos entran hoy en juego?</h2>' +
       '<div class="muted">Añade hasta 8 equipos</div>' +
+      (Motor.hayPlantilla() ? '<button class="flow-back" id="usarPlantillaBtn">↺ Usar los equipos de la última vez</button>' : '') +
       '<div class="team-grid-wrap"><div class="team-grid cols-' + cols + '" id="teamGrid">' + celdas.join('') + '</div>' +
       '<div id="equiposError"></div>' +
       '<button class="big-cta" id="continuarEquiposBtn">▶ Continuar</button></div>' +
       '<div class="flow-footer"><button class="flow-back" id="backModoBtn">◀ Volver</button></div>';
 
     document.getElementById('backModoBtn').onclick = function () { Motor.setFase('MODO'); UI.render(); };
+    var plantillaBtn = document.getElementById('usarPlantillaBtn');
+    if (plantillaBtn) plantillaBtn.onclick = function () { Sonido.clic(); Motor.cargarPlantilla(); pintarEquiposFlow(); };
     var addBtn = document.getElementById('addSlotBtn');
     if (addBtn) addBtn.onclick = function () { Sonido.clic(); abrirSelectorIdentidad(null); };
     refs.flowScreen.querySelectorAll('.remove-slot').forEach(function (btn) {
@@ -119,6 +122,7 @@
     document.getElementById('continuarEquiposBtn').onclick = function () {
       var res = Motor.confirmarInicio();
       if (!res.ok) { document.getElementById('equiposError').innerHTML = '<div class="error-box">⚠️ ' + res.error + '</div>'; return; }
+      Motor.guardarPlantilla();
       Sonido.avanzar();
       Motor.setFase('CONTENIDO_GATE');
       UI.render();

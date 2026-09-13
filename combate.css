@@ -17,6 +17,9 @@
 .combate-chip.show{opacity:1;transform:translateY(0);}
 .combate-chip .emoji{font-family:var(--emoji-font);font-size:20px;}
 .combate-vamos-btn{margin-top:10px;}
+.sorteo-centro{min-width:140px;display:flex;align-items:center;justify-content:center;}
+.combate-chip.centro{font-size:16px;padding:14px 22px;transform:scale(.6);}
+.combate-chip.centro.show{transform:scale(1);}
 
 /* ---- Arena dividida, con mucho más margen central ---- */
 #combateArena{flex:1;display:flex;gap:0;min-height:0;align-items:stretch;position:relative;z-index:1;}
@@ -26,6 +29,7 @@
 .combate-lado.azul{box-shadow:inset 0 0 0 3px var(--accent-cyan);background:rgba(127,224,255,.18);}
 
 .combate-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:10px;flex-wrap:wrap;position:relative;z-index:1;}
+.combate-responde{text-align:center;font-weight:900;font-size:13px;padding:6px 0;background:rgba(20,23,26,.06);position:relative;z-index:1;}
 .combate-miembros{display:flex;gap:8px;flex-wrap:wrap;}
 .combate-miembro{background:rgba(255,255,255,.7);border-radius:10px;padding:5px 10px;font-size:11.5px;font-weight:700;display:flex;align-items:center;gap:5px;opacity:.55;border:2px solid transparent;}
 .combate-miembro.activo{opacity:1;border-color:var(--accent-lima);background:#fff;}
@@ -38,10 +42,9 @@
 .combate-cuerpo{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 20px;text-align:center;gap:16px;min-height:0;position:relative;z-index:1;}
 .combate-cuerpo h3{font-size:19px;width:100%;max-width:420px;background:#fff;border-radius:14px;padding:14px 18px;box-shadow:var(--shadow-soft);font-weight:800;box-sizing:border-box;}
 .combate-opciones-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:420px;box-sizing:border-box;}
-.combate-opcion{font-family:inherit;font-weight:500;font-size:14px;padding:16px 12px;border-radius:14px;border:none;background:#fff;cursor:pointer;box-shadow:0 4px 0 rgba(20,23,26,.15),var(--shadow-soft);display:flex;align-items:center;gap:8px;text-align:left;transition:transform .15s,box-shadow .15s;animation:opcionRespira 2.6s ease-in-out infinite;}
-.combate-opcion:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 7px 0 rgba(20,23,26,.15),var(--shadow-soft);animation:none;}
+.combate-opcion{font-family:inherit;font-weight:500;font-size:14px;padding:16px 12px;border-radius:14px;border:none;background:#fff;cursor:pointer;box-shadow:0 4px 0 rgba(20,23,26,.15),0 2px 8px rgba(20,23,26,.08);display:flex;align-items:center;gap:8px;text-align:left;transition:transform .15s,box-shadow .15s;}
+.combate-opcion:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 7px 0 rgba(20,23,26,.15),0 2px 8px rgba(20,23,26,.08);}
 .combate-opcion:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(20,23,26,.15);}
-@keyframes opcionRespira{0%,100%{box-shadow:0 4px 0 rgba(20,23,26,.15),var(--shadow-soft);}50%{box-shadow:0 4px 0 rgba(20,23,26,.15),0 0 0 3px rgba(207,255,4,.25);}}
 .combate-opcion-letra{background:var(--bg-app-soft);color:var(--text-dark);font-weight:900;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12.5px;}
 .combate-opcion.correcta{background:var(--accent-lima);animation:none;}
 .combate-opcion.incorrecta{background:var(--accent-red);color:#fff;animation:none;}
@@ -49,6 +52,14 @@
 
 .combate-furor{background:var(--accent-orange);color:#fff;font-weight:900;font-size:12px;padding:5px 12px;border-radius:99px;animation:furorPulso .6s ease-in-out infinite;}
 @keyframes furorPulso{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+
+/* ---- Reloj global, mismo estilo que Calentamiento, pausable al tocar ---- */
+.timer-pill{display:inline-flex;align-items:center;gap:9px;background:var(--panel-dark);color:#fff;padding:10px 20px;border-radius:99px;box-shadow:var(--shadow-panel);cursor:pointer;font-weight:900;font-size:20px;font-variant-numeric:tabular-nums;}
+.timer-pill .t-icon{font-family:var(--emoji-font);font-size:17px;}
+.timer-pill.danger{color:var(--accent-red);}
+.timer-pill.pausado{opacity:.55;}
+.timer-pill.pausado::after{content:"⏸";margin-left:2px;}
+#combateArea.pausado .combate-opcion,#combateArea.pausado .combate-poder-btn{pointer-events:none;opacity:.45;}
 
 /* ---- Poderes de sabotaje (tras racha de furor) ---- */
 .combate-poderes{display:flex;flex-direction:column;gap:6px;padding:10px 16px 14px;border-top:1px dashed rgba(20,23,26,.15);}
@@ -60,3 +71,9 @@
 .combate-bloqueo-overlay{display:none;}
 .combate-bloqueo-overlay.activo{display:flex;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(255,45,85,.22);color:var(--accent-red);font-weight:900;font-size:20px;z-index:5;pointer-events:auto;}
 .combate-bloqueo-overlay.activo.apagon{background:#0a0a0a;color:#fff;}
+
+/* ---- Caja sorpresa y efectos aleatorios ---- */
+.combate-sorpresa-banner{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) scale(.5);background:var(--accent-gold);color:var(--text-dark);font-weight:900;font-size:18px;padding:14px 22px;border-radius:16px;z-index:8;animation:sorpresaPop .9s ease forwards;}
+@keyframes sorpresaPop{0%{transform:translate(-50%,-50%) scale(.4);opacity:0;}30%{transform:translate(-50%,-50%) scale(1.15);opacity:1;}70%{transform:translate(-50%,-50%) scale(1);opacity:1;}100%{transform:translate(-50%,-50%) scale(1);opacity:0;}}
+.combate-lado.glitch{animation:glitchShake .18s steps(2) infinite;filter:saturate(2) hue-rotate(15deg);}
+@keyframes glitchShake{0%{transform:translate(0,0);}25%{transform:translate(-3px,2px);}50%{transform:translate(3px,-2px);}75%{transform:translate(-2px,-1px);}100%{transform:translate(0,0);}}

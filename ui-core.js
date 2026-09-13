@@ -170,7 +170,11 @@ var UI = (function () {
     var fase = Motor.getFase();
     var botones = [];
     if (fase === 'JUGANDO' || fase === 'JUEGOS') botones.push({ label: '📚 Cargar / cambiar contenido', fn: actions.cargarContenido });
-    if (fase === 'JUGANDO') botones.push({ label: '🏁 Finalizar y ver resultados', fn: actions.finalizar });
+    if (fase === 'JUGANDO') {
+      botones.push({ label: '🔀 Cambiar de juego (guarda puntos)', fn: function () { if (window.Combate && Combate.estaActivo()) Combate.detener(); if (actions.detenerJuegoActual) actions.detenerJuegoActual(); Motor.setFase('JUEGOS'); render(); } });
+      botones.push({ label: '🔁 Reiniciar clasificación', fn: function () { if (confirm('¿Poner los puntos a 0? Los equipos se mantienen.')) { Motor.reiniciarClasificacion(); } } });
+      botones.push({ label: '🏁 Finalizar y ver resultados', fn: actions.finalizar });
+    }
     if (fase !== 'SPLASH') botones.push({ label: '🏠 Salir al menú principal', fn: confirmarMenuPrincipal });
 
     document.getElementById('hpActions').innerHTML = botones.map(function (b, i) {

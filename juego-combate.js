@@ -15,7 +15,7 @@ var Combate = (function () {
   var area;
   var lados = {};
   var enJuego = false;
-  var handleTotal = null, restanteTotal = DURACION_TOTAL;
+  var handleTotal = null, restanteTotal = DURACION_TOTAL, pausado = false;
   var usadasPorEquipo = {};
 
   var EMOJIS_FONDO = ['📦','🚚','🛒','🏬','📈','🏷️','💻','⚙️','🔧','🚗','🩺','🍽️','✂️','🎨','🌾','🖊️','🔬','📐'];
@@ -49,31 +49,53 @@ var Combate = (function () {
     area.classList.remove('hidden');
     area.innerHTML =
       '<div id="combateSorteo"><div class="titulo">⚔️ El combate</div>' +
+      '<div class="muted" style="color:rgba(255,255,255,.7);max-width:520px;margin:-14px 0 22px">Cada equipo de su bando responde <strong>2 preguntas</strong> y luego le toca al siguiente compañero del mismo bando. Arriba de cada lado verás quién responde ahora.</div>' +
       '<div class="combate-bandos-preview">' +
       '<div class="combate-bando-col rojo"><div class="bando-nombre">🔴 BANDO ROJO</div><div id="colRojo"></div></div>' +
+      '<div id="sorteoCentro" class="sorteo-centro"></div>' +
       '<div class="combate-bando-col azul"><div class="bando-nombre">🔵 BANDO AZUL</div><div id="colAzul"></div></div>' +
       '</div><div id="combateSorteoAccion"></div></div>';
 
     var colRojo = document.getElementById('colRojo'), colAzul = document.getElementById('colAzul');
-    var todos = [];
-    grupoRojo.forEach(function (eq) { todos.push({ eq: eq, col: colRojo }); });
-    grupoAzul.forEach(function (eq) { todos.push({ eq: eq, col: colAzul }); });
-    todos.forEach(function (item, i) {
+    var centro = document.getElementById('sorteoCentro');
+    var intercalados = [];
+    var maxLen = Math.max(grupoRojo.length, grupoAzul.length);
+    for (var k = 0; k < maxLen; k++) {
+      if (grupoRojo[k]) intercalados.push({ eq: grupoRojo[k], col: colRojo });
+      if (grupoAzul[k]) intercalados.push({ eq: grupoAzul[k], col: colAzul });
+    }
+
+    function mostrarUno(idx) {
+      if (idx >= intercalados.length) {
+        setTimeout(function () {
+          Sonido.avanzar();
+          document.getElementById('combateSorteoAccion').innerHTML = '<button class="big-cta combate-vamos-btn" id="combateVamosBtn">▶ ¡Empezar combate!</button>';
+          document.getElementById('combateVamosBtn').onclick = function () {
+            Sonido.transicion();
+            var flash = UI.refs.playIntro;
+            var cont = document.getElementById('playIntroContent');
+            cont.innerHTML = '<div class="txt">¡A JUGAR!</div>';
+            flash.classList.add('show');
+            setTimeout(function () { flash.classList.remove('show'); empezarArena(grupoRojo, grupoAzul); }, 750);
+          };
+        }, 200);
+        return;
+      }
+      var item = intercalados[idx];
+      Sonido.clic();
+      centro.innerHTML = '<div class="combate-chip centro">' + item.eq.emoji + ' ' + item.eq.nombre + '</div>';
+      requestAnimationFrame(function () { centro.querySelector('.combate-chip').classList.add('show'); });
       setTimeout(function () {
-        Sonido.clic();
+        centro.innerHTML = '';
         var chip = document.createElement('div');
         chip.className = 'combate-chip';
         chip.innerHTML = '<span class="emoji">' + item.eq.emoji + '</span>' + item.eq.nombre;
         item.col.appendChild(chip);
         requestAnimationFrame(function () { chip.classList.add('show'); });
-      }, 350 + i * 280);
-    });
-
-    setTimeout(function () {
-      Sonido.avanzar();
-      document.getElementById('combateSorteoAccion').innerHTML = '<button class="big-cta combate-vamos-btn" id="combateVamosBtn">▶ ¡Empezar combate!</button>';
-      document.getElementById('combateVamosBtn').onclick = function () { empezarArena(grupoRojo, grupoAzul); };
-    }, 350 + todos.length * 280 + 300);
+        setTimeout(function () { mostrarUno(idx + 1); }, 260);
+      }, 480);
+    }
+    setTimeout(function () { mostrarUno(0); }, 400);
   }
 
   function crearEstadoLado(equipos) {
@@ -84,10 +106,12 @@ var Combate = (function () {
     lados.rojo = crearEstadoLado(grupoRojo);
     lados.azul = crearEstadoLado(grupoAzul);
     enJuego = true;
+    Motor.setFase('JUGANDO');
     restanteTotal = DURACION_TOTAL;
+    pausado = false;
 
     area.innerHTML = pintarFondoCombate() +
-      '<div style="text-align:center;margin-bottom:8px;position:relative;z-index:1"><span class="overall-timer" id="combateTotalTimer">3:00</span></div>' +
+      '<div style="text-align:center;margin-bottom:8px;position:relative;z-index:1"><span class="timer-pill" id="combateTotalTimer"><span class="t-icon">⏱️</span><span class="t-num">3:00</span></span></div>' +
       '<div id="combateArena">' +
       '<div class="combate-lado rojo" id="lado-rojo"></div>' +
       '<div class="combate-divisor"></div>' +
@@ -97,17 +121,33 @@ var Combate = (function () {
     clearInterval(handleTotal);
     handleTotal = setInterval(function () {
       restanteTotal--;
-      var el = document.getElementById('combateTotalTimer');
-      if (el) {
-        var m = Math.floor(restanteTotal / 60), s = restanteTotal % 60;
-        el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
-        el.classList.toggle('danger', restanteTotal <= 20);
-      }
+      pintarTotalCombate();
       if (restanteTotal <= 0) finalizar();
     }, 1000);
+    pintarTotalCombate();
+
+    document.getElementById('combateTotalTimer').onclick = function () {
+      Sonido.clic();
+      pausado = !pausado;
+      var el = document.getElementById('combateTotalTimer');
+      area.classList.toggle('pausado', pausado);
+      if (pausado) { clearInterval(handleTotal); el.classList.add('pausado'); }
+      else {
+        el.classList.remove('pausado');
+        handleTotal = setInterval(function () { restanteTotal--; pintarTotalCombate(); if (restanteTotal <= 0) finalizar(); }, 1000);
+      }
+    };
 
     siguientePregunta('rojo');
     siguientePregunta('azul');
+  }
+
+  function pintarTotalCombate() {
+    var el = document.getElementById('combateTotalTimer');
+    if (!el) return;
+    var m = Math.floor(restanteTotal / 60), s = restanteTotal % 60;
+    el.querySelector('.t-num').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    el.classList.toggle('danger', restanteTotal <= 20);
   }
 
   function equipoActivo(lado) { var l = lados[lado]; return l.equipos[l.activoIdx % l.equipos.length]; }
@@ -152,6 +192,7 @@ var Combate = (function () {
     var membrete = l.equipos.map(function (eq, i) {
       return '<span class="combate-miembro' + (i === (l.activoIdx % l.equipos.length) ? ' activo' : '') + '"><span class="emoji">' + eq.emoji + '</span>' + eq.nombre + '</span>';
     }).join('');
+    var equipoResponde = equipoActivo(lado);
     var puntosVisibles = l.equipos[0].puntos;
     var furorBadge = l.rachaFuror >= RACHA_PARA_FUROR ? '<span class="combate-furor">🔥 FUROR x2</span>' : '';
 
@@ -173,6 +214,7 @@ var Combate = (function () {
     }
 
     cont.innerHTML =
+      '<div class="combate-responde">▶ Responde ahora: ' + equipoResponde.emoji + ' ' + equipoResponde.nombre + '</div>' +
       '<div class="combate-header">' +
       '<div class="combate-miembros">' + membrete + '</div>' +
       '<div class="combate-puntos" id="puntos-' + lado + '">' + puntosVisibles + '</div>' +
@@ -194,6 +236,49 @@ var Combate = (function () {
   }
 
   function rivalDe(lado) { return lado === 'rojo' ? 'azul' : 'rojo'; }
+
+  function activarCajaSorpresa(lado) {
+    var rival = rivalDe(lado);
+    var cont = document.getElementById('lado-' + lado);
+    if (cont) {
+      var banner = document.createElement('div');
+      banner.className = 'combate-sorpresa-banner';
+      banner.textContent = '🎁 ¡CAJA SORPRESA!';
+      cont.appendChild(banner);
+      setTimeout(function () { banner.remove(); }, 900);
+    }
+    var efectos = ['bloqueo', 'apagon', 'glitch', 'locos'];
+    var tipo = efectos[Math.floor(Math.random() * efectos.length)];
+    setTimeout(function () { aplicarEfectoSobre(rival, tipo); }, 650);
+  }
+
+  function aplicarEfectoSobre(rival, tipo) {
+    if (!enJuego) return;
+    var rl = lados[rival];
+    var overlay = document.getElementById('bloqueo-' + rival);
+    if (tipo === 'bloqueo' || tipo === 'apagon') {
+      var dur = tipo === 'bloqueo' ? 5000 : 4000;
+      rl.bloqueadoHasta = Date.now() + dur;
+      if (overlay) {
+        overlay.className = 'combate-bloqueo-overlay activo' + (tipo === 'apagon' ? ' apagon' : '');
+        overlay.textContent = tipo === 'apagon' ? '⚫ ¡Apagón!' : '🔒 ¡Bloqueado!';
+      }
+      setTimeout(function () { if (overlay) overlay.className = 'combate-bloqueo-overlay'; rl.bloqueadoHasta = 0; }, dur);
+    } else if (tipo === 'glitch') {
+      var cont = document.getElementById('lado-' + rival);
+      if (cont) { cont.classList.add('glitch'); setTimeout(function () { cont.classList.remove('glitch'); }, 3000); }
+    } else if (tipo === 'locos') {
+      var grid = document.querySelector('#lado-' + rival + ' .combate-opciones-grid');
+      if (!grid) return;
+      var vueltas = 0;
+      var iv = setInterval(function () {
+        var hijos = Array.prototype.slice.call(grid.children);
+        for (var i = hijos.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); grid.insertBefore(hijos[i], hijos[j]); }
+        vueltas++;
+        if (vueltas >= 6) clearInterval(iv);
+      }, 550);
+    }
+  }
 
   function usarPoder(lado, tipo) {
     var l = lados[lado];
@@ -237,7 +322,7 @@ var Combate = (function () {
   }
 
   function evaluarLado(lado, indiceElegido, btnEl) {
-    if (!enJuego) return;
+    if (!enJuego || pausado) return;
     var l = lados[lado];
     if (Date.now() < l.bloqueadoHasta) return; // bloqueado por el rival, no puede responder
     var activo = equipoActivo(lado);
@@ -255,6 +340,7 @@ var Combate = (function () {
       sumarPuntosBando(lado, puntos);
       if (l.rachaFuror >= RACHA_PARA_FUROR) l.poderDisponible = true;
       if (l.streak >= RONDAS_PARA_ROTAR) { l.streak = 0; l.activoIdx++; }
+      if (Math.random() < 0.22) activarCajaSorpresa(lado);
     } else {
       Sonido.fallo();
       l.streak = 0; l.rachaFuror = 0; l.poderDisponible = false;
@@ -270,13 +356,16 @@ var Combate = (function () {
 
   function finalizar() {
     if (!enJuego) return;
-    enJuego = false;
-    clearInterval(handleTotal);
-    area.classList.add('hidden');
-    area.innerHTML = '';
+    detener();
     Motor.setFase('RESULTADOS');
     UI.render();
   }
 
-  return { iniciar: iniciar };
+  function detener() {
+    enJuego = false;
+    clearInterval(handleTotal);
+    if (area) { area.classList.add('hidden'); area.innerHTML = ''; }
+  }
+
+  return { iniciar: iniciar, detener: detener, estaActivo: function () { return enJuego; } };
 })();

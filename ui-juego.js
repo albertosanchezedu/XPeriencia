@@ -477,6 +477,7 @@
   /* =================== RESULTADOS / TROFEO =================== */
   function irAResultados() { Motor.detenerTemporizador(); clearInterval(handleTotal); Motor.setFase('RESULTADOS'); UI.render(); }
   UI.actions.finalizar = irAResultados;
+  UI.actions.detenerJuegoActual = function () { Motor.detenerTemporizador(); clearInterval(handleTotal); };
 
   UI.screens.RESULTADOS = function () {
     Sonido.victoria();
