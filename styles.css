@@ -270,7 +270,10 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .punto-volador{position:fixed;font-weight:900;font-size:22px;color:var(--accent-lima);z-index:99;pointer-events:none;transition:transform .7s cubic-bezier(.3,.1,.2,1),opacity .7s ease;text-shadow:0 2px 6px rgba(0,0,0,.3);}
 
 /* ---- Controles docente: DENTRO del recuadro de juego, pegados abajo ---- */
-#teacherControls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;flex-shrink:0;padding:14px 18px;border-top:1px solid rgba(20,23,26,.08);}
+#teacherControls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;flex-shrink:0;padding:10px 18px 22px;border-top:1px solid rgba(20,23,26,.08);}
+.controles-separados{display:flex;align-items:center;gap:0;width:100%;justify-content:center;}
+.controles-separados .grupo{display:flex;gap:10px;}
+.controles-separados .hueco-central{width:min(18vw,160px);flex-shrink:0;}
 .ctrl-btn{font-family:inherit;font-weight:700;font-size:13.5px;border:none;cursor:pointer;padding:11px 18px;border-radius:var(--radius-m);transition:transform .12s,filter .12s;display:flex;align-items:center;gap:7px;box-shadow:var(--shadow-soft);}
 .ctrl-btn:hover{transform:translateY(-2px);filter:brightness(1.05);}
 .ctrl-btn.ok{background:var(--accent-lima);color:var(--text-dark);}
@@ -280,6 +283,15 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .ctrl-btn.neutral{background:var(--panel-dark);color:#fff;}
 
 .error-box{background:rgba(255,45,85,.14);border:1px solid var(--accent-red);color:#8a0021;padding:9px 14px;border-radius:var(--radius-s);font-size:13.5px;font-weight:700;}
+
+.overall-timer{background:var(--panel-dark);color:#fff;border-radius:99px;padding:7px 16px;font-weight:900;font-size:16px;font-variant-numeric:tabular-nums;}
+.overall-timer.danger{color:var(--accent-red);animation:pulseDanger .6s infinite;}
+
+/* ---- Carta de Calentamiento (verdadero/falso) ---- */
+.carta-vf{background:#fff;border-radius:var(--radius-l);padding:28px 34px;box-shadow:var(--shadow-soft);max-width:640px;width:100%;transform:scale(.85) translateY(14px);opacity:0;transition:transform .28s cubic-bezier(.2,1.3,.3,1),opacity .28s ease;}
+.carta-vf.in{transform:scale(1) translateY(0);opacity:1;}
+.carta-vf-barra{height:8px;border-radius:99px;background:rgba(20,23,26,.1);overflow:hidden;margin-bottom:18px;}
+.carta-vf-barra-fill{height:100%;background:var(--accent-lima);width:100%;}
 .big-cta{background:var(--accent-lima);color:var(--text-dark);font-weight:700;font-size:16px;border:none;padding:14px 32px;border-radius:99px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.18);transition:transform .15s,filter .15s;display:flex;align-items:center;gap:8px;}
 .big-cta:disabled{opacity:.35;cursor:not-allowed;}
 .big-cta:not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.04);}

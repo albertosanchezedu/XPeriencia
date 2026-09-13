@@ -25,23 +25,24 @@
   }
 
   var PROMPT_CONTENIDO =
-    'Actúa como generador de contenido curricular para una aplicación web educativa multijuego de Formación Profesional.\n\n' +
-    'Tu misión es transformar los materiales que te voy a adjuntar (diapositivas, apuntes o documento del tema) en un único archivo de texto con contenido en formato JSON válido en UTF-8, siguiendo esta estructura obligatoria:\n\n' +
-    '{"schema_version":"1.0","metadata":{"curso":"","modulo":"","unidad":"","titulo":"","descripcion":"","version":"","idioma":"es"},"concepts":[],"questions":[],"pairs":[],"expression":[],"taboo":[],"infiltrated":[],"answer_is":[],"challenges":[],"recovery":[]}\n\n' +
-    'No inventes contenido que no aparezca en los materiales que te adjunto. Trabaja solo con eso.\n\n' +
-    'Rellena cada bloque así:\n' +
-    '- concepts: id (C001, C002...), term, definition, explanation, keywords, difficulty (1-5), category.\n' +
-    '- questions: id (Q001...), concept_id, type (definition/recognition/comparison/application/case/reasoning/example), question, answer, explanation, difficulty. Prioriza preguntas que exijan comprender y aplicar, no solo memorizar.\n' +
-    '- pairs: id (P001...), concept_id, term, match, difficulty.\n' +
-    '- expression: id (E001...), concept_id, term, modes (draw/mime/explain), difficulty.\n' +
-    '- taboo: id (T001...), concept_id, term, forbidden (palabras prohibidas), difficulty.\n' +
-    '- infiltrated: id (I001...), category, word, related_words, difficulty.\n' +
-    '- answer_is: id (A001...), concept_id, answer, difficulty.\n' +
-    '- challenges: id (R001...), type, prompt (situación profesional realista), concept_ids, difficulty.\n' +
-    '- recovery: retos breves para repasar conceptos con dificultades.\n\n' +
-    'Usa cinco niveles de dificultad (1 muy accesible a 5 avanzado) según la exigencia cognitiva, no la longitud. No generes contenido de relleno: mejor 30 preguntas buenas que 100 repetitivas. Todos los IDs deben ser únicos y todos los concept_id usados deben existir en concepts.\n\n' +
-    'Antes de responder, comprueba que el JSON es válido, está en UTF-8 y no le faltan campos.\n\n' +
-    'Devuélveme SOLO el contenido final, sin explicaciones, listo para guardar como archivo .txt. Ponle de nombre al archivo el nombre del tema o unidad que te he adjuntado (por ejemplo "tecnicas_almacen_gestion_existencias.txt"), para poder identificarlo fácilmente entre varios.';
+    'Actúa como generador de contenido curricular para una app educativa multijuego de Formación Profesional.\n\n' +
+    'Transforma los materiales que te adjunto (diapositivas, apuntes, documento del tema) en un único archivo de texto JSON válido en UTF-8, con esta estructura:\n\n' +
+    '{"schema_version":"1.1","metadata":{"curso":"","modulo":"","unidad":"","titulo":"","descripcion":"","version":"","idioma":"es"},"concepts":[],"questions":[],"pairs":[],"expression":[],"taboo":[],"infiltrated":[],"answer_is":[],"challenges":[],"recovery":[]}\n\n' +
+    'No inventes nada que no esté en los materiales.\n\n' +
+    'concepts: id (C001...), term, definition, explanation, keywords, difficulty (1-5), category.\n\n' +
+    'questions: NECESITO MUCHA CANTIDAD (mínimo 60, si el tema da para más, mejor) y de TRES TIPOS obligatorios, mezclados:\n' +
+    '1) "choice" (opción múltiple, para el juego "El combate"): {"id":"Q001","concept_id":"C001","type":"choice","question":"...","options":["op1","op2","op3","op4"],"correct_index":0,"explanation":"...","difficulty":1-5}. Las 4 opciones deben ser plausibles, nada de respuestas absurdas de relleno.\n' +
+    '2) "truefalse" (verdadero/falso, para el juego "Calentamiento"): {"id":"Q002","concept_id":"C001","type":"truefalse","question":"Afirmación a valorar...","is_true":true,"explanation":"...","difficulty":1-5}. Necesito MUCHAS de este tipo (al menos 40), variadas y no repetitivas, mitad verdaderas mitad falsas.\n' +
+    '3) "application" (abierta, para el juego "Reto libre"): {"id":"Q003","concept_id":"C001","type":"application","question":"...","answer":"...","explanation":"...","difficulty":1-5}.\n\n' +
+    'pairs: id (P001...), concept_id, term, match, difficulty.\n' +
+    'expression: id (E001...), concept_id, term, modes (draw/mime/explain), difficulty.\n' +
+    'taboo: id (T001...), concept_id, term, forbidden, difficulty.\n' +
+    'infiltrated: id (I001...), category, word, related_words, difficulty.\n' +
+    'answer_is: id (A001...), concept_id, answer, difficulty.\n' +
+    'challenges: id (R001...), type, prompt (situación profesional realista), concept_ids, difficulty.\n' +
+    'recovery: retos breves de repaso, con 3 opciones tipo "choice" cada uno para poder usarse en la sala de castigo.\n\n' +
+    'Dificultad 1 (muy accesible) a 5 (avanzada), según exigencia cognitiva. IDs únicos, concept_id siempre existente en concepts.\n\n' +
+    'Comprueba que el JSON es válido y UTF-8. Devuélveme SOLO el contenido final, listo para .txt, nombrado con el tema (ej. "tecnicas_almacen_gestion_existencias.txt").';
 
   function abrirAyudaContenido() {
     document.getElementById('contentHelpOverlay').classList.add('show');
@@ -103,9 +104,9 @@
 
   /* =================== JUEGOS (catálogo) =================== */
   var CATALOGO_JUEGOS = [
-    { id: 'reto_rapido', emoji: '⚡', titulo: 'Reto rápido', desc: 'Preguntas de aplicación con temporizador. El docente valida cada respuesta oralmente. Ideal para repasar conceptos concretos en poco tiempo.', disponible: true },
+    { id: 'reto_rapido', emoji: '🔥', titulo: 'Calentamiento', desc: 'Cartas de verdadero o falso a toda velocidad. 15s por carta, 2 aciertos seguidos y sigues tú; un fallo o agotar el tiempo pasa el turno. 3:30 en total: gana quien más acierte.', disponible: true },
     { id: 'infiltrado', emoji: '🕵️', titulo: 'Infiltrado', desc: 'Un equipo no conoce el concepto secreto y debe disimularlo mientras el resto da pistas. Próximamente.', disponible: false },
-    { id: 'combate', emoji: '⚔️', titulo: 'El combate', desc: 'Los equipos se dividen en dos bandos. Pantalla dividida: cada bando responde sus propias preguntas a la vez. Cada 2 aciertos rota el turno dentro del bando; al fallar, todo el bando entra en la sala de castigo y tiene que colaborar para salir.', disponible: true },
+    { id: 'combate', emoji: '⚔️', titulo: 'El combate', desc: 'Dos bandos, pantalla dividida, preguntas de 4 opciones a la vez. Racha de aciertos = modo furor x2. Un fallo manda a todo el bando a la sala de castigo.', disponible: true },
     { id: 'batalla_naval', emoji: '🚢', titulo: 'Batalla naval', desc: 'Localiza conceptos en un tablero por coordenadas y hunde la flota rival respondiendo bien. Próximamente.', disponible: false },
     { id: 'flashcards', emoji: '🃏', titulo: 'Flashcards', desc: 'Tarjetas con giro 3D: término por delante, definición al dar la vuelta. Próximamente.', disponible: false },
     { id: 'pictionary', emoji: '🎨', titulo: 'Pictionary FP', desc: 'Dibuja, mima o explica el concepto para que tu equipo lo adivine. Próximamente.', disponible: false }
@@ -149,6 +150,9 @@
 
   /* =================== SORTEO DEL EQUIPO INICIAL =================== */
   var saltarPantallaTurno = false;
+  var DURACION_TOTAL = 210; // 3:30, todo el "Calentamiento"
+  var restanteTotal = DURACION_TOTAL;
+  var handleTotal = null;
 
   function empezarPartida() {
     Motor.reiniciarRonda();
@@ -211,11 +215,12 @@
     }, 750);
   }
 
-  /* =================== JUGANDO =================== */
+  /* =================== JUGANDO: Calentamiento (verdadero/falso) =================== */
   var preguntasEnRacha = 0;
 
   UI.screens.JUGANDO = function () {
     renderTeamsPanel(true);
+    iniciarTemporizadorTotal();
     if (saltarPantallaTurno) {
       saltarPantallaTurno = false;
       preguntasEnRacha = 0;
@@ -225,20 +230,41 @@
     }
   };
 
+  function iniciarTemporizadorTotal() {
+    clearInterval(handleTotal);
+    restanteTotal = DURACION_TOTAL;
+    pintarTotal();
+    handleTotal = setInterval(function () {
+      restanteTotal--;
+      pintarTotal();
+      if (restanteTotal <= 0) { clearInterval(handleTotal); irAResultados(); }
+    }, 1000);
+  }
+  function pintarTotal() {
+    var el = document.getElementById('overallTimer');
+    if (!el) return;
+    var m = Math.floor(restanteTotal / 60), s = restanteTotal % 60;
+    el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    el.classList.toggle('danger', restanteTotal <= 20);
+  }
+
   function renderTeamsPanel(animar) {
     var equipos = Motor.getEquipos();
     var activoIdx = Motor.getEquipoActivoIdx();
-    refs.teamsPanel.innerHTML = equipos.map(function (eq, i) {
-      return '<div class="team-card' + (i === activoIdx ? ' active' : '') + '">' +
-        '<span class="now-playing">▶ Ahora juega</span>' +
-        '<div class="t-name"><span class="t-emoji emoji">' + eq.emoji + '</span>' + eq.nombre + '</div>' +
-        (eq.portavoz ? '<div class="t-portavoz">🎤 ' + eq.portavoz + '</div>' : '') +
-        '<div class="t-score" id="score-' + eq.id + '">' + eq.puntos + '</div>' +
-        '</div>';
-    }).join('');
+    refs.teamsPanel.innerHTML =
+      '<div id="overallTimer" class="overall-timer" style="align-self:center">' + Math.floor(DURACION_TOTAL / 60) + ':' + (DURACION_TOTAL % 60) + '</div>' +
+      equipos.map(function (eq, i) {
+        return '<div class="team-card' + (i === activoIdx ? ' active' : '') + '">' +
+          '<span class="now-playing">▶ Ahora juega</span>' +
+          '<div class="t-name"><span class="t-emoji emoji">' + eq.emoji + '</span>' + eq.nombre + '</div>' +
+          (eq.portavoz ? '<div class="t-portavoz">🎤 ' + eq.portavoz + '</div>' : '') +
+          '<div class="t-score" id="score-' + eq.id + '">' + eq.puntos + '</div>' +
+          '</div>';
+      }).join('');
     var cards = refs.teamsPanel.querySelectorAll('.team-card');
     if (animar) cards.forEach(function (c, i) { setTimeout(function () { c.classList.add('appear'); }, i * 80); });
     else cards.forEach(function (c) { c.classList.add('appear'); });
+    pintarTotal();
   }
   Motor.on('puntuacion:cambio', function (d) {
     var el = document.getElementById('score-' + d.equipo.id);
@@ -272,24 +298,39 @@
   });
 
   var retoActual = null, equipoRetoActual = null;
+  var DURACION_CARTA = 15;
+
+  function preguntaVF(equipoId) {
+    var contenido = Motor.getContenido();
+    if (!contenido) return null;
+    var vf = contenido.questions.filter(function (q) { return q.type === 'truefalse'; });
+    return Motor.seleccionarPorDificultad(vf.length ? vf : contenido.questions, Motor.nivelDificultad(equipoId));
+  }
 
   function renderReto() {
     Motor.setEstado('PREGUNTA_RETO');
     var equipo = Motor.getEquipoActivo();
-    var pregunta = Motor.preguntaParaEquipo(equipo.id);
+    var pregunta = preguntaVF(equipo.id);
     retoActual = pregunta; equipoRetoActual = equipo;
 
     refs.stageContent.classList.remove('show', 'flash-fail');
     setTimeout(function () {
       if (!pregunta) {
-        refs.stageContent.innerHTML = '<div class="muted">No hay más preguntas disponibles en el contenido cargado.</div>';
+        refs.stageContent.innerHTML = '<div class="muted">No hay más cartas de verdadero/falso en el contenido cargado.</div>';
       } else {
         refs.stageContent.innerHTML =
-          '<div class="muted" style="margin-bottom:8px">' + equipo.emoji + ' ' + equipo.nombre + ' · pregunta ' + (preguntasEnRacha + 1) + ' de 3</div>' +
-          '<h2 style="text-align:center;max-width:640px;font-size:26px">' + pregunta.question + '</h2>';
+          '<div class="muted" style="margin-bottom:8px">' + equipo.emoji + ' ' + equipo.nombre + '</div>' +
+          '<div class="carta-vf">' +
+          '<div class="carta-vf-barra"><div class="carta-vf-barra-fill" id="cartaBarra"></div></div>' +
+          '<h2 style="text-align:center;max-width:640px;font-size:26px">' + pregunta.question + '</h2>' +
+          '</div>';
       }
       renderControles(equipo, pregunta);
-      requestAnimationFrame(function () { refs.stageContent.classList.add('show'); });
+      requestAnimationFrame(function () {
+        refs.stageContent.classList.add('show');
+        var c = refs.stageContent.querySelector('.carta-vf');
+        if (c) requestAnimationFrame(function () { c.classList.add('in'); });
+      });
       if (pregunta) iniciarRetoTimer();
     }, 120);
   }
@@ -297,44 +338,67 @@
   function iniciarRetoTimer() {
     refs.timerWrap.classList.remove('warn', 'danger');
     var timerNum = refs.timerWrap.querySelector('.t-num');
-    Motor.iniciarTemporizador(30,
+    var barra = document.getElementById('cartaBarra');
+    if (barra) { barra.style.transition = 'none'; barra.style.width = '100%'; void barra.offsetWidth; barra.style.transition = 'width ' + DURACION_CARTA + 's linear'; barra.style.width = '0%'; }
+    Motor.iniciarTemporizador(DURACION_CARTA,
       function (restante) {
         timerNum.textContent = restante;
-        refs.timerWrap.classList.toggle('warn', restante <= 15 && restante > 5);
+        refs.timerWrap.classList.toggle('warn', restante <= 10 && restante > 5);
         refs.timerWrap.classList.toggle('danger', restante <= 5);
+        if (restante === 10 || restante === 5) Sonido.clic();
       },
       function () {
         Sonido.tiempoAgotado();
-        refs.timeUpBanner.style.display = 'flex';
-        refs.timeUpBanner.classList.add('shake');
-        refs.timeUpBanner.innerHTML =
-          '<div class="catastrofe-emoji">💥</div><div>¡OH NO! SE ACABÓ EL TIEMPO</div><div class="timeup-actions">' +
-          '<button class="ctrl-btn ok" id="tuOk">✅ Acierto</button>' +
-          '<button class="ctrl-btn fail" id="tuFail">❌ Fallo</button></div>';
-        document.getElementById('tuOk').onclick = function () { refs.timeUpBanner.style.display = 'none'; refs.timeUpBanner.classList.remove('shake'); evaluar(true, retoActual, equipoRetoActual, 10); };
-        document.getElementById('tuFail').onclick = function () { refs.timeUpBanner.style.display = 'none'; refs.timeUpBanner.classList.remove('shake'); evaluar(false, retoActual, equipoRetoActual, 0); };
+        cambiarTurnoPorFalloOTiempo();
       }
     );
-    timerNum.textContent = 30;
+    timerNum.textContent = DURACION_CARTA;
   }
 
   function renderControles(equipo, pregunta) {
     var wrap = document.getElementById('teacherControls');
+    if (!pregunta) { wrap.innerHTML = ''; return; }
     wrap.innerHTML =
-      '<button class="ctrl-btn ok" id="btnOk">✅ Acierto</button>' +
-      '<button class="ctrl-btn fail" id="btnFail">❌ Fallo</button>' +
-      '<button class="ctrl-btn great" id="btnGreat">⭐ Excelente</button>' +
-      '<button class="ctrl-btn plus" id="btnPlus">➕ Puntos</button>' +
-      '<button class="ctrl-btn minus" id="btnMinus">➖ Puntos</button>' +
-      '<button class="ctrl-btn neutral" id="btnPause">⏸ Pausa</button>' +
-      '<button class="ctrl-btn neutral" id="btnNext">➡ Siguiente turno</button>';
-    document.getElementById('btnOk').onclick = function () { evaluar(true, pregunta, equipo, 10); };
-    document.getElementById('btnFail').onclick = function () { evaluar(false, pregunta, equipo, 0); };
-    document.getElementById('btnGreat').onclick = function () { evaluar(true, pregunta, equipo, 15); };
-    document.getElementById('btnPlus').onclick = function () { Sonido.clic(); volarPuntos(equipo, 5); };
-    document.getElementById('btnMinus').onclick = function () { Sonido.clic(); Motor.sumarPuntos(equipo.id, -5); };
+      '<div class="controles-separados">' +
+      '<div class="grupo"><button class="ctrl-btn ok" id="btnV">✅ Verdadero</button></div>' +
+      '<div class="hueco-central"></div>' +
+      '<div class="grupo"><button class="ctrl-btn fail" id="btnF">❌ Falso</button></div>' +
+      '</div>' +
+      '<button class="ctrl-btn neutral" id="btnPause" style="margin-top:8px">⏸ Pausa</button>';
+    document.getElementById('btnV').onclick = function () { evaluarVF(true); };
+    document.getElementById('btnF').onclick = function () { evaluarVF(false); };
     document.getElementById('btnPause').onclick = function () { Sonido.clic(); Motor.pausarTemporizador(); };
-    document.getElementById('btnNext').onclick = function () { Sonido.clic(); Motor.detenerTemporizador(); preguntasEnRacha = 0; Motor.siguienteEquipo(); };
+  }
+
+  function cambiarTurnoPorFalloOTiempo() {
+    Motor.detenerTemporizador();
+    mostrarFeedbackGrande('fail', 'RESPUESTA INCORRECTA', '😬');
+    preguntasEnRacha = 0;
+    setTimeout(function () { Motor.siguienteEquipo(); }, 1000);
+  }
+
+  function evaluarVF(marcadaVerdadera) {
+    var pregunta = retoActual, equipo = equipoRetoActual;
+    var acierto = pregunta && (marcadaVerdadera === pregunta.is_true);
+    Motor.detenerTemporizador();
+    Motor.setEstado('FEEDBACK');
+    if (pregunta) Motor.registrarResultado(equipo.id, pregunta.concept_id, acierto, pregunta.type);
+
+    if (acierto) {
+      Sonido.acierto();
+      mostrarFeedbackGrande('ok', '¡GENIAL!', '🎉');
+      volarPuntos(equipo, 10);
+      preguntasEnRacha++;
+      setTimeout(function () {
+        if (preguntasEnRacha < 2) renderReto();
+        else Motor.siguienteEquipo();
+      }, 1050);
+    } else {
+      Sonido.fallo();
+      mostrarFeedbackGrande('fail', 'RESPUESTA INCORRECTA', '😬');
+      preguntasEnRacha = 0;
+      setTimeout(function () { Motor.siguienteEquipo(); }, 1050);
+    }
   }
 
   /* ---- Feedback grande de acierto/fallo (mismo peso visual que "tiempo agotado") ---- */
@@ -395,35 +459,14 @@
   }
 
   function evaluar(acierto, pregunta, equipo, puntos) {
+    // deprecado: Calentamiento usa evaluarVF(); se deja por si otro juego futuro lo necesita
     Motor.detenerTemporizador();
-    Motor.setEstado('FEEDBACK');
     if (pregunta) Motor.registrarResultado(equipo.id, pregunta.concept_id, acierto, pregunta.type);
-
-    if (acierto) {
-      Sonido.acierto();
-      mostrarFeedbackGrande('ok', '¡GENIAL!', '🎉');
-      volarPuntos(equipo, puntos);
-      preguntasEnRacha++;
-      Motor.incrementarRonda();
-      setTimeout(function () {
-        if (Motor.objetivoAlcanzado()) { irAResultados(); return; }
-        if (preguntasEnRacha < 3) renderReto();
-        else Motor.siguienteEquipo();
-      }, 1050);
-    } else {
-      Sonido.fallo();
-      mostrarFeedbackGrande('fail', 'RESPUESTA INCORRECTA', '😬');
-      preguntasEnRacha = 0;
-      Motor.incrementarRonda();
-      setTimeout(function () {
-        if (Motor.objetivoAlcanzado()) irAResultados();
-        else Motor.siguienteEquipo();
-      }, 1050);
-    }
+    if (acierto) volarPuntos(equipo, puntos);
   }
 
   /* =================== RESULTADOS / TROFEO =================== */
-  function irAResultados() { Motor.detenerTemporizador(); Motor.setFase('RESULTADOS'); UI.render(); }
+  function irAResultados() { Motor.detenerTemporizador(); clearInterval(handleTotal); Motor.setFase('RESULTADOS'); UI.render(); }
   UI.actions.finalizar = irAResultados;
 
   UI.screens.RESULTADOS = function () {
