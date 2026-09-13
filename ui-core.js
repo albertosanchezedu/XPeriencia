@@ -90,18 +90,22 @@ var UI = (function () {
     }, 1750);
 
     setTimeout(function () {
-      chip.style.transition = 'opacity .28s ease';
-      colon.style.transition = 'opacity .28s ease';
-      chip.style.opacity = '0';
+      var chipRect = chip.getBoundingClientRect();
+      var restRect = rest.getBoundingClientRect();
+      var distancia = restRect.left - chipRect.right; // hueco real en pantalla, medido de verdad
+      chip.style.transition = 'transform .32s cubic-bezier(.4,.1,.2,1)';
+      colon.style.transition = 'opacity .18s ease';
       colon.style.opacity = '0';
+      chip.style.transform = 'translateX(' + distancia + 'px)';
       setTimeout(function () {
+        // impacto: sacudida + el chip pierde su caja y la palabra queda completa
+        document.getElementById('introSeq').classList.add('impacto');
         chip.style.display = 'none';
         colon.style.display = 'none';
         rest.style.transition = 'none';
         rest.style.width = 'auto';
         rest.textContent = 'XPeriencia';
-        document.getElementById('introSeq').classList.add('impacto');
-      }, 300);
+      }, 320);
     }, 2700);
 
     setTimeout(function () { document.getElementById('splashSub').classList.add('show'); }, 3150);
