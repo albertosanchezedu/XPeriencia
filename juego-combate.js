@@ -66,7 +66,7 @@ var Combate = (function () {
   }
 
   function crearEstadoLado(equipos) {
-    return { equipos: equipos, activoIdx: 0, streak: 0, rachaFuror: 0, preguntaActual: null };
+    return { equipos: equipos, activoIdx: 0, streak: 0, rachaFuror: 0, preguntaActual: null, poderDisponible: false, bloqueadoHasta: 0 };
   }
 
   function empezarArena(grupoRojo, grupoAzul) {
@@ -110,8 +110,27 @@ var Combate = (function () {
     var libres = vistas ? pool.filter(function (q) { return !vistas.has(q.id); }) : pool;
     if (!libres.length) libres = pool;
     var elegida = Motor.seleccionarPorDificultad(libres, Motor.nivelDificultad(equipoId));
-    if (elegida) (usadasPorEquipo[equipoId] = usadasPorEquipo[equipoId] || new Set()).add(elegida.id);
-    return elegida;
+    if (!elegida) return null;
+    (usadasPorEquipo[equipoId] = usadasPorEquipo[equipoId] || new Set()).add(elegida.id);
+    return barajarOpciones(elegida);
+  }
+
+  // Evita que la respuesta correcta caiga siempre en la misma posición:
+  // devuelve una COPIA de la pregunta con las opciones barajadas y el
+  // índice correcto recalculado, sin tocar el original.
+  function barajarOpciones(pregunta) {
+    var indices = pregunta.options.map(function (_, i) { return i; });
+    for (var i = indices.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = indices[i]; indices[i] = indices[j]; indices[j] = tmp;
+    }
+    var nuevasOpciones = indices.map(function (i) { return pregunta.options[i]; });
+    var nuevoCorrectIndex = indices.indexOf(pregunta.correct_index);
+    var copia = {};
+    for (var k in pregunta) copia[k] = pregunta[k];
+    copia.options = nuevasOpciones;
+    copia.correct_index = nuevoCorrectIndex;
+    return copia;
   }
 
   function renderLado(lado) {
@@ -131,6 +150,17 @@ var Combate = (function () {
       return '<button class="combate-opcion" data-i="' + i + '"><span class="combate-opcion-letra">' + letras[i] + '</span>' + op + '</button>';
     }).join('');
 
+    var poderesHtml = '';
+    if (l.poderDisponible) {
+      poderesHtml =
+        '<div class="combate-poderes">' +
+        '<div class="combate-poderes-label">🔥 ¡Usa un poder contra el rival!</div>' +
+        '<button class="combate-poder-btn" data-poder="bloqueo">🔒 Bloquear 5s</button>' +
+        '<button class="combate-poder-btn" data-poder="apagon">⚫ Apagón 4s</button>' +
+        '<button class="combate-poder-btn" data-poder="cambiar">🔀 Cambiar su pregunta</button>' +
+        '</div>';
+    }
+
     cont.innerHTML =
       '<div class="combate-header">' +
       '<div class="combate-miembros">' + membrete + '</div>' +
@@ -140,11 +170,46 @@ var Combate = (function () {
       furorBadge +
       '<h3>' + (l.preguntaActual ? l.preguntaActual.question : 'Sin más preguntas disponibles') + '</h3>' +
       '<div class="combate-opciones-grid">' + botonesHtml + '</div>' +
-      '</div>';
+      '</div>' +
+      poderesHtml +
+      '<div class="combate-bloqueo-overlay" id="bloqueo-' + lado + '"></div>';
 
     cont.querySelectorAll('.combate-opcion').forEach(function (btn) {
       btn.onclick = function () { evaluarLado(lado, parseInt(btn.getAttribute('data-i'), 10), btn); };
     });
+    cont.querySelectorAll('.combate-poder-btn').forEach(function (btn) {
+      btn.onclick = function () { usarPoder(lado, btn.getAttribute('data-poder')); };
+    });
+  }
+
+  function rivalDe(lado) { return lado === 'rojo' ? 'azul' : 'rojo'; }
+
+  function usarPoder(lado, tipo) {
+    var l = lados[lado];
+    if (!l.poderDisponible) return;
+    l.poderDisponible = false;
+    l.rachaFuror = 0;
+    Sonido.avanzar();
+    var rival = rivalDe(lado);
+    var rl = lados[rival];
+    var overlay = document.getElementById('bloqueo-' + rival);
+
+    if (tipo === 'cambiar') {
+      siguientePregunta(rival);
+      renderLado(lado);
+      return;
+    }
+    var duracion = tipo === 'bloqueo' ? 5000 : 4000;
+    rl.bloqueadoHasta = Date.now() + duracion;
+    if (overlay) {
+      overlay.className = 'combate-bloqueo-overlay activo' + (tipo === 'apagon' ? ' apagon' : '');
+      overlay.textContent = tipo === 'apagon' ? '⚫ ¡Apagón!' : '🔒 ¡Bloqueado!';
+    }
+    setTimeout(function () {
+      if (overlay) overlay.className = 'combate-bloqueo-overlay';
+      rl.bloqueadoHasta = 0;
+    }, duracion);
+    renderLado(lado);
   }
 
   function siguientePregunta(lado) {
@@ -163,6 +228,7 @@ var Combate = (function () {
   function evaluarLado(lado, indiceElegido, btnEl) {
     if (!enJuego) return;
     var l = lados[lado];
+    if (Date.now() < l.bloqueadoHasta) return; // bloqueado por el rival, no puede responder
     var activo = equipoActivo(lado);
     var p = l.preguntaActual;
     var acierto = p && indiceElegido === p.correct_index;
@@ -176,10 +242,11 @@ var Combate = (function () {
       l.rachaFuror++;
       var puntos = l.rachaFuror >= RACHA_PARA_FUROR ? PUNTOS_ACIERTO * 2 : PUNTOS_ACIERTO;
       sumarPuntosBando(lado, puntos);
+      if (l.rachaFuror >= RACHA_PARA_FUROR) l.poderDisponible = true;
       if (l.streak >= RONDAS_PARA_ROTAR) { l.streak = 0; l.activoIdx++; }
     } else {
       Sonido.fallo();
-      l.streak = 0; l.rachaFuror = 0;
+      l.streak = 0; l.rachaFuror = 0; l.poderDisponible = false;
       sumarPuntosBando(lado, PUNTOS_FALLO);
       l.activoIdx++;
     }

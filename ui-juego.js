@@ -330,10 +330,15 @@
           '<div class="muted" style="margin-bottom:8px">' + equipo.emoji + ' ' + equipo.nombre + '</div>' +
           '<div class="carta-vf">' +
           '<div class="carta-vf-barra"><div class="carta-vf-barra-fill" id="cartaBarra"></div></div>' +
-          '<h2 style="text-align:center;max-width:640px;font-size:26px">' + pregunta.question + '</h2>' +
-          '</div>';
+          '<h2>' + pregunta.question + '</h2>' +
+          '<div class="carta-vf-botones">' +
+          '<button class="carta-vf-btn ok" id="btnV">✅ Verdadero</button>' +
+          '<button class="carta-vf-btn fail" id="btnF">❌ Falso</button>' +
+          '</div></div>';
+        document.getElementById('btnV').onclick = function () { evaluarVF(true); };
+        document.getElementById('btnF').onclick = function () { evaluarVF(false); };
       }
-      renderControles(equipo, pregunta);
+      document.getElementById('teacherControls').innerHTML = '';
       requestAnimationFrame(function () {
         refs.stageContent.classList.add('show');
         var c = refs.stageContent.querySelector('.carta-vf');
@@ -348,34 +353,30 @@
     var timerNum = refs.timerWrap.querySelector('.t-num');
     var barra = document.getElementById('cartaBarra');
     if (barra) { barra.style.transition = 'none'; barra.style.width = '100%'; void barra.offsetWidth; barra.style.transition = 'width ' + DURACION_CARTA + 's linear'; barra.style.width = '0%'; }
-    Motor.iniciarTemporizador(DURACION_CARTA,
-      function (restante) {
-        timerNum.textContent = restante;
-        refs.timerWrap.classList.toggle('warn', restante <= 10 && restante > 5);
-        refs.timerWrap.classList.toggle('danger', restante <= 5);
-        if (restante === 10 || restante === 5) Sonido.clic();
-      },
-      function () {
-        Sonido.tiempoAgotado();
-        cambiarTurnoPorFalloOTiempo();
-      }
-    );
-    timerNum.textContent = DURACION_CARTA;
-  }
 
-  function renderControles(equipo, pregunta) {
-    var wrap = document.getElementById('teacherControls');
-    if (!pregunta) { wrap.innerHTML = ''; return; }
-    wrap.innerHTML =
-      '<div class="controles-separados">' +
-      '<div class="grupo"><button class="ctrl-btn ok" id="btnV">✅ Verdadero</button></div>' +
-      '<div class="hueco-central"></div>' +
-      '<div class="grupo"><button class="ctrl-btn fail" id="btnF">❌ Falso</button></div>' +
-      '</div>' +
-      '<button class="ctrl-btn neutral" id="btnPause" style="margin-top:8px">⏸ Pausa</button>';
-    document.getElementById('btnV').onclick = function () { evaluarVF(true); };
-    document.getElementById('btnF').onclick = function () { evaluarVF(false); };
-    document.getElementById('btnPause').onclick = function () { Sonido.clic(); Motor.pausarTemporizador(); };
+    function onTick(restante) {
+      timerNum.textContent = restante;
+      refs.timerWrap.classList.toggle('warn', restante <= 10 && restante > 5);
+      refs.timerWrap.classList.toggle('danger', restante <= 5);
+      if (restante === 10 || restante === 5) Sonido.clic();
+    }
+    function onFin() { Sonido.tiempoAgotado(); cambiarTurnoPorFalloOTiempo(); }
+
+    Motor.iniciarTemporizador(DURACION_CARTA, onTick, onFin);
+    timerNum.textContent = DURACION_CARTA;
+
+    refs.timerWrap.onclick = function () {
+      Sonido.clic();
+      if (Motor.temporizadorActivo()) {
+        Motor.pausarTemporizador();
+        refs.timerWrap.classList.add('pausado');
+        var barraP = document.getElementById('cartaBarra');
+        if (barraP) barraP.style.animationPlayState = 'paused';
+      } else {
+        Motor.reanudarTemporizador(onTick, onFin);
+        refs.timerWrap.classList.remove('pausado');
+      }
+    };
   }
 
   function cambiarTurnoPorFalloOTiempo() {

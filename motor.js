@@ -252,6 +252,17 @@ var Motor = (function () {
   }
   function detenerTemporizador() { if (timerState.handle) clearInterval(timerState.handle); timerState.handle = null; timerState.activo = false; }
   function pausarTemporizador() { if (timerState.handle) { clearInterval(timerState.handle); timerState.handle = null; timerState.activo = false; } emit('timer:pausa', timerState); }
+  function reanudarTemporizador(onTick, onFin) {
+    if (timerState.restante <= 0 || timerState.handle) return;
+    timerState.activo = true;
+    timerState.handle = setInterval(function () {
+      timerState.restante--;
+      emit('timer:tick', timerState);
+      if (onTick) onTick(timerState.restante);
+      if (timerState.restante <= 0) { detenerTemporizador(); emit('timer:fin', timerState); if (onFin) onFin(); }
+    }, 1000);
+  }
+  function temporizadorActivo() { return timerState.activo; }
 
   /* ---------------- PERSISTENCIA ---------------- */
   var STORAGE_KEY = 'motorfp_sesion_v4';
@@ -305,6 +316,7 @@ var Motor = (function () {
     cargarContenido: cargarContenido, getContenido: getContenido, hayContenido: hayContenido,
     seleccionarPorDificultad: seleccionarPorDificultad, preguntaParaEquipo: preguntaParaEquipo,
     iniciarTemporizador: iniciarTemporizador, detenerTemporizador: detenerTemporizador, pausarTemporizador: pausarTemporizador,
+    reanudarTemporizador: reanudarTemporizador, temporizadorActivo: temporizadorActivo,
     persistir: persistir, haySesionGuardada: haySesionGuardada, restaurarSesion: restaurarSesion, reiniciarTodo: reiniciarTodo
   };
 })();

@@ -287,11 +287,22 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .overall-timer{background:var(--panel-dark);color:#fff;border-radius:99px;padding:7px 16px;font-weight:900;font-size:16px;font-variant-numeric:tabular-nums;}
 .overall-timer.danger{color:var(--accent-red);animation:pulseDanger .6s infinite;}
 
-/* ---- Carta de Calentamiento (verdadero/falso) ---- */
-.carta-vf{background:#fff;border-radius:var(--radius-l);padding:28px 34px;box-shadow:var(--shadow-soft);max-width:640px;width:100%;transform:scale(.85) translateY(14px);opacity:0;transition:transform .28s cubic-bezier(.2,1.3,.3,1),opacity .28s ease;}
-.carta-vf.in{transform:scale(1) translateY(0);opacity:1;}
-.carta-vf-barra{height:8px;border-radius:99px;background:rgba(20,23,26,.1);overflow:hidden;margin-bottom:18px;}
+/* ---- Carta de Calentamiento (verdadero/falso), tipo flashcard ---- */
+.carta-vf{background:#fff;border-radius:var(--radius-l);padding:32px 38px 26px;box-shadow:var(--shadow-soft);max-width:680px;width:100%;transform:scale(.85) translateY(14px) rotate(-1deg);opacity:0;transition:transform .32s cubic-bezier(.2,1.4,.3,1),opacity .28s ease;}
+.carta-vf.in{transform:scale(1) translateY(0) rotate(0deg);opacity:1;}
+.carta-vf-barra{height:8px;border-radius:99px;background:rgba(20,23,26,.1);overflow:hidden;margin-bottom:22px;}
 .carta-vf-barra-fill{height:100%;background:var(--accent-lima);width:100%;}
+.carta-vf h2{text-align:center;font-size:28px;margin-bottom:26px;}
+.carta-vf-botones{display:flex;gap:16px;justify-content:center;}
+.carta-vf-btn{font-family:inherit;font-weight:900;font-size:19px;padding:20px 0;flex:1;max-width:220px;border:none;border-radius:16px;cursor:pointer;box-shadow:0 5px 0 rgba(20,23,26,.15);transition:transform .12s,box-shadow .12s;}
+.carta-vf-btn:hover{transform:translateY(-3px);box-shadow:0 8px 0 rgba(20,23,26,.15);}
+.carta-vf-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(20,23,26,.15);}
+.carta-vf-btn.ok{background:var(--accent-lima);color:var(--text-dark);}
+.carta-vf-btn.fail{background:var(--accent-red);color:#fff;}
+
+#timerWrap{cursor:pointer;}
+#timerWrap.pausado{opacity:.55;}
+#timerWrap.pausado::after{content:"⏸";margin-left:4px;}
 .carta-vf-barra.oculto{visibility:hidden;}
 .big-cta{background:var(--accent-lima);color:var(--text-dark);font-weight:700;font-size:16px;border:none;padding:14px 32px;border-radius:99px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.18);transition:transform .15s,filter .15s;display:flex;align-items:center;gap:8px;}
 .big-cta:disabled{opacity:.35;cursor:not-allowed;}
