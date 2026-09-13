@@ -105,7 +105,7 @@
   var CATALOGO_JUEGOS = [
     { id: 'reto_rapido', emoji: '⚡', titulo: 'Reto rápido', desc: 'Preguntas de aplicación con temporizador. El docente valida cada respuesta oralmente. Ideal para repasar conceptos concretos en poco tiempo.', disponible: true },
     { id: 'infiltrado', emoji: '🕵️', titulo: 'Infiltrado', desc: 'Un equipo no conoce el concepto secreto y debe disimularlo mientras el resto da pistas. Próximamente.', disponible: false },
-    { id: 'combate', emoji: '⚔️', titulo: 'El combate', desc: 'Duelo directo entre dos equipos con preguntas de opción múltiple a contrarreloj. Próximamente.', disponible: false },
+    { id: 'combate', emoji: '⚔️', titulo: 'El combate', desc: 'Los equipos se dividen en dos bandos. Pantalla dividida: cada bando responde sus propias preguntas a la vez. Cada 2 aciertos rota el turno dentro del bando; al fallar, todo el bando entra en la sala de castigo y tiene que colaborar para salir.', disponible: true },
     { id: 'batalla_naval', emoji: '🚢', titulo: 'Batalla naval', desc: 'Localiza conceptos en un tablero por coordenadas y hunde la flota rival respondiendo bien. Próximamente.', disponible: false },
     { id: 'flashcards', emoji: '🃏', titulo: 'Flashcards', desc: 'Tarjetas con giro 3D: término por delante, definición al dar la vuelta. Próximamente.', disponible: false },
     { id: 'pictionary', emoji: '🎨', titulo: 'Pictionary FP', desc: 'Dibuja, mima o explica el concepto para que tu equipo lo adivine. Próximamente.', disponible: false }
@@ -141,7 +141,10 @@
         card.style.borderColor = 'var(--accent-lima)';
       };
     });
-    document.getElementById('confirmarJuegoBtn').onclick = function () { empezarPartida(); };
+    document.getElementById('confirmarJuegoBtn').onclick = function () {
+      if (juegoSeleccionado.id === 'combate' && window.Combate) { Combate.iniciar(); return; }
+      empezarPartida();
+    };
   };
 
   /* =================== SORTEO DEL EQUIPO INICIAL =================== */

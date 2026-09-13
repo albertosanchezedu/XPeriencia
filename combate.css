@@ -1,0 +1,51 @@
+/* ===================================================================
+   EL COMBATE — estilos propios, no toca styles.css
+   =================================================================== */
+
+#combateArea{position:fixed;inset:0;z-index:60;background:linear-gradient(160deg,#AFD9EE 0%,#c9e6f5 100%);display:flex;flex-direction:column;padding:16px 20px;}
+
+/* ---- Sorteo de bandos ---- */
+#combateSorteo{position:fixed;inset:0;z-index:61;background:var(--panel-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;}
+#combateSorteo .titulo{font-size:30px;font-weight:900;margin-bottom:26px;}
+.combate-bandos-preview{display:flex;gap:40px;align-items:flex-start;justify-content:center;flex-wrap:wrap;margin-bottom:26px;}
+.combate-bando-col{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:180px;}
+.combate-bando-col .bando-nombre{font-weight:900;font-size:18px;letter-spacing:.03em;}
+.combate-bando-col.rojo .bando-nombre{color:var(--accent-red);}
+.combate-bando-col.azul .bando-nombre{color:var(--accent-cyan);}
+.combate-chip{background:#1f2e38;border-radius:14px;padding:10px 16px;display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease;}
+.combate-chip.show{opacity:1;transform:translateY(0);}
+.combate-chip .emoji{font-family:var(--emoji-font);font-size:20px;}
+.combate-vamos-btn{margin-top:10px;}
+
+/* ---- Arena dividida ---- */
+#combateArena{flex:1;display:flex;gap:14px;min-height:0;}
+.combate-lado{flex:1;min-width:0;display:flex;flex-direction:column;border-radius:var(--radius-l);overflow:hidden;background:rgba(255,255,255,.5);position:relative;}
+.combate-lado.rojo{box-shadow:inset 0 0 0 3px var(--accent-red);}
+.combate-lado.azul{box-shadow:inset 0 0 0 3px var(--accent-cyan);}
+
+.combate-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:10px;flex-wrap:wrap;}
+.combate-miembros{display:flex;gap:8px;flex-wrap:wrap;}
+.combate-miembro{background:rgba(255,255,255,.7);border-radius:10px;padding:5px 10px;font-size:11.5px;font-weight:700;display:flex;align-items:center;gap:5px;opacity:.55;border:2px solid transparent;}
+.combate-miembro.activo{opacity:1;border-color:var(--accent-lima);background:#fff;}
+.combate-puntos{font-weight:900;font-size:24px;}
+.combate-puntos.bump{animation:scoreBump .35s ease;}
+
+.combate-timer{background:var(--panel-dark);color:#fff;border-radius:99px;padding:6px 14px;font-weight:900;font-size:18px;font-variant-numeric:tabular-nums;}
+.combate-timer.warn{color:var(--accent-orange);}
+.combate-timer.danger{color:var(--accent-red);}
+
+.combate-cuerpo{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:14px;min-height:0;}
+.combate-cuerpo h3{font-size:19px;max-width:90%;}
+.combate-controles{display:flex;gap:8px;padding:12px;justify-content:center;flex-wrap:wrap;}
+.combate-controles button{font-family:inherit;font-weight:700;font-size:13px;border:none;border-radius:12px;padding:9px 16px;cursor:pointer;box-shadow:var(--shadow-soft);}
+.combate-controles .ok{background:var(--accent-lima);}
+.combate-controles .fail{background:var(--accent-red);color:#fff;}
+
+/* ---- Sala de castigo ---- */
+.combate-lado.castigo .combate-cuerpo{background:rgba(255,45,85,.12);}
+.combate-castigo-badge{background:var(--accent-red);color:#fff;font-weight:900;font-size:12px;padding:5px 12px;border-radius:99px;}
+.combate-castigo-progreso{display:flex;gap:6px;}
+.combate-castigo-progreso .paso{width:14px;height:14px;border-radius:50%;background:rgba(255,45,85,.25);}
+.combate-castigo-progreso .paso.hecho{background:var(--accent-red);}
+
+.combate-flash-fail{animation:flashFail .4s ease;}
