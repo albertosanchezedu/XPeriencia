@@ -17,10 +17,54 @@
       '<h2>Ey, profe 👋</h2>' +
       '<div class="muted">Antes de nada, sube el contenido.txt de esta unidad para que preparemos las preguntas.</div>' +
       '<button class="big-cta" id="loadContentBtn">📚 Subir contenido.txt</button>' +
+      '<button class="help-content-link" id="howToLink">¿No lo tienes generado todavía? Te digo cómo</button>' +
       '<div class="flow-footer"><button class="flow-back" id="backEquiposBtn">◀ Volver</button></div>';
     document.getElementById('backEquiposBtn').onclick = function () { Motor.setFase('EQUIPOS'); UI.render(); };
     document.getElementById('loadContentBtn').onclick = function () { Sonido.clic(); refs.contentFileInput.click(); };
+    document.getElementById('howToLink').onclick = function () { Sonido.clic(); abrirAyudaContenido(); };
   }
+
+  var PROMPT_CONTENIDO =
+    'Actúa como generador de contenido curricular para una aplicación web educativa multijuego de Formación Profesional.\n\n' +
+    'Tu misión es transformar los materiales que te voy a adjuntar (diapositivas, apuntes o documento del tema) en un único archivo de texto con contenido en formato JSON válido en UTF-8, siguiendo esta estructura obligatoria:\n\n' +
+    '{"schema_version":"1.0","metadata":{"curso":"","modulo":"","unidad":"","titulo":"","descripcion":"","version":"","idioma":"es"},"concepts":[],"questions":[],"pairs":[],"expression":[],"taboo":[],"infiltrated":[],"answer_is":[],"challenges":[],"recovery":[]}\n\n' +
+    'No inventes contenido que no aparezca en los materiales que te adjunto. Trabaja solo con eso.\n\n' +
+    'Rellena cada bloque así:\n' +
+    '- concepts: id (C001, C002...), term, definition, explanation, keywords, difficulty (1-5), category.\n' +
+    '- questions: id (Q001...), concept_id, type (definition/recognition/comparison/application/case/reasoning/example), question, answer, explanation, difficulty. Prioriza preguntas que exijan comprender y aplicar, no solo memorizar.\n' +
+    '- pairs: id (P001...), concept_id, term, match, difficulty.\n' +
+    '- expression: id (E001...), concept_id, term, modes (draw/mime/explain), difficulty.\n' +
+    '- taboo: id (T001...), concept_id, term, forbidden (palabras prohibidas), difficulty.\n' +
+    '- infiltrated: id (I001...), category, word, related_words, difficulty.\n' +
+    '- answer_is: id (A001...), concept_id, answer, difficulty.\n' +
+    '- challenges: id (R001...), type, prompt (situación profesional realista), concept_ids, difficulty.\n' +
+    '- recovery: retos breves para repasar conceptos con dificultades.\n\n' +
+    'Usa cinco niveles de dificultad (1 muy accesible a 5 avanzado) según la exigencia cognitiva, no la longitud. No generes contenido de relleno: mejor 30 preguntas buenas que 100 repetitivas. Todos los IDs deben ser únicos y todos los concept_id usados deben existir en concepts.\n\n' +
+    'Antes de responder, comprueba que el JSON es válido, está en UTF-8 y no le faltan campos.\n\n' +
+    'Devuélveme SOLO el contenido final, sin explicaciones, listo para guardar como archivo .txt. Ponle de nombre al archivo el nombre del tema o unidad que te he adjuntado (por ejemplo "tecnicas_almacen_gestion_existencias.txt"), para poder identificarlo fácilmente entre varios.';
+
+  function abrirAyudaContenido() {
+    document.getElementById('contentHelpOverlay').classList.add('show');
+  }
+  document.getElementById('contentHelpCloseBtn').onclick = function () {
+    document.getElementById('contentHelpOverlay').classList.remove('show');
+  };
+  document.getElementById('chpCopyBtn').onclick = function () {
+    var btn = document.getElementById('chpCopyBtn');
+    function marcarCopiado() {
+      Sonido.avanzar();
+      btn.textContent = '✔ Copiado';
+      btn.classList.add('copied');
+      setTimeout(function () { btn.textContent = '📋 Copiar prompt'; btn.classList.remove('copied'); }, 1800);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(PROMPT_CONTENIDO).then(marcarCopiado).catch(function () {
+        window.prompt('Copia manualmente este texto:', PROMPT_CONTENIDO);
+      });
+    } else {
+      window.prompt('Copia manualmente este texto:', PROMPT_CONTENIDO);
+    }
+  };
 
   function pintarContenidoConfirmado() {
     var meta = Motor.getContenido().metadata || {};
@@ -111,40 +155,45 @@
     refs.playIntro.classList.add('show');
     cont.innerHTML =
       '<div style="font-size:32px;font-weight:900">' + juegoSeleccionado.emoji + ' ' + juegoSeleccionado.titulo + '</div>' +
-      '<div style="font-size:16px;color:rgba(255,255,255,.6);margin:10px 0 26px;font-weight:700">Empieza jugando…</div>' +
+      '<div style="font-size:16px;color:rgba(255,255,255,.6);margin:14px 0 34px;font-weight:700">Empieza jugando…</div>' +
       '<div id="sorteoCard"><div id="sorteoCardInner"><span class="emoji">' + equipos[0].emoji + '</span><span class="name">' + equipos[0].nombre + '</span></div></div>' +
-      '<div id="sorteoResultado" style="margin-top:22px;min-height:56px"></div>';
+      '<div id="sorteoResultado" style="margin-top:34px;min-height:56px"></div>';
 
-    var card = document.getElementById('sorteoCard');
     var inner = document.getElementById('sorteoCardInner');
-    var vueltas = 8 + Math.floor(Math.random() * 3);
+    var card = document.getElementById('sorteoCard');
+    var vueltas = 13 + Math.floor(Math.random() * 4);
     var elegido = Math.floor(Math.random() * equipos.length);
-    var pausa = 15;
+    var intervalo = 35;
+
+    function pintar(n) {
+      var eq = equipos[n % equipos.length];
+      inner.querySelector('.emoji').textContent = eq.emoji;
+      inner.querySelector('.name').textContent = eq.nombre;
+    }
 
     function tick(n) {
-      inner.classList.add('flip');
+      inner.classList.add('slide-out');
       setTimeout(function () {
-        var eq = equipos[n % equipos.length];
-        inner.querySelector('.emoji').textContent = eq.emoji;
-        inner.querySelector('.name').textContent = eq.nombre;
-        inner.classList.remove('flip');
+        pintar(n);
+        inner.classList.remove('slide-out');
+        inner.classList.add('slide-in');
+        requestAnimationFrame(function () { inner.classList.remove('slide-in'); });
         Sonido.clic();
         if (n < vueltas) {
-          pausa *= 1.32;
-          setTimeout(function () { tick(n + 1); }, 130 + pausa);
+          intervalo *= 1.18;
+          setTimeout(function () { tick(n + 1); }, intervalo);
         } else {
-          var elegidoEq = equipos[elegido];
-          inner.querySelector('.emoji').textContent = elegidoEq.emoji;
-          inner.querySelector('.name').textContent = elegidoEq.nombre;
+          pintar(elegido);
           card.classList.add('final');
           Motor.activarEquipo(elegido);
           Sonido.avanzar();
+          var elegidoEq = equipos[elegido];
           document.getElementById('sorteoResultado').innerHTML =
-            '<div style="font-size:26px;font-weight:900;color:var(--accent-lima);margin-bottom:16px">¡Empieza ' + elegidoEq.emoji + ' ' + elegidoEq.nombre + '!</div>' +
+            '<div style="font-size:26px;font-weight:900;color:var(--accent-lima);margin-bottom:18px">¡Empieza ' + elegidoEq.emoji + ' ' + elegidoEq.nombre + '!</div>' +
             '<button class="big-cta" id="vamosAllaBtn">▶ ¡Vamos allá!</button>';
           document.getElementById('vamosAllaBtn').onclick = lanzarTransicionFinal;
         }
-      }, 130);
+      }, 100);
     }
     setTimeout(function () { tick(0); }, 400);
   }
@@ -379,12 +428,6 @@
   UI.screens.RESULTADOS = function () {
     Sonido.victoria();
     var ranking = Motor.clasificacion();
-    var resumen = Motor.analizarDominioGrupal();
-    var contenido = Motor.getContenido();
-    function nombresDe(ids) {
-      if (!contenido) return ids.join(', ') || '—';
-      return ids.map(function (id) { var c = contenido.concepts.find(function (c) { return c.id === id; }); return c ? c.term : id; }).join(', ') || '—';
-    }
     refs.flowScreen.innerHTML =
       '<div class="results-box">' +
       '<div class="trophy">🏆</div>' +
@@ -392,20 +435,11 @@
       '<div class="rank-list">' + ranking.map(function (eq, i) {
         return '<div class="rank-row"><span class="pos">' + (i + 1) + '</span><span class="emoji">' + eq.emoji + '</span><span>' + eq.nombre + '</span><span class="pts">' + eq.puntos + '</span></div>';
       }).join('') + '</div>' +
-      '<button class="stats-toggle-btn" id="statsToggleBtn">📊 ¿Qué tenemos que reforzar?</button>' +
-      '<div class="stats-panel" id="statsPanel"><div class="inner">' +
-      '<div class="crack">habéis sido unos crack en: ' + nombresDe(resumen.dominados) + '</div>' +
-      '<div class="reforzar">recordad reforzar: ' + nombresDe(resumen.reforzar) + '</div>' +
-      '</div></div>' +
       '<div style="display:flex;gap:12px;margin-top:6px">' +
       '<button class="big-cta" id="otroJuegoBtn">▶ Elegir otro juego</button>' +
       '<button class="flow-back" id="menuPrincipalBtn">🏠 Menú principal</button>' +
       '</div></div>';
 
-    document.getElementById('statsToggleBtn').onclick = function () {
-      Sonido.clic();
-      document.getElementById('statsPanel').classList.toggle('open');
-    };
     document.getElementById('otroJuegoBtn').onclick = function () {
       Motor.setModo(Motor.getModo().tipo);
       Motor.setFase('JUEGOS');

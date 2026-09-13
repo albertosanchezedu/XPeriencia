@@ -69,8 +69,8 @@ var UI = (function () {
     var colon = document.getElementById('introColon');
     var rest = document.getElementById('introRest');
     chip.textContent = 'FP';
-    chip.classList.remove('junto', 'pulse');
-    document.getElementById('introSeq').classList.remove('impacto');
+    chip.classList.remove('pulse');
+    document.getElementById('introSeq').classList.remove('impacto', 'junto');
     colon.classList.remove('gone');
     rest.classList.remove('reveal');
     rest.textContent = '';
@@ -87,8 +87,7 @@ var UI = (function () {
     }, 1750);
 
     setTimeout(function () {
-      chip.classList.add('junto');
-      document.getElementById('introSeq').classList.add('impacto');
+      document.getElementById('introSeq').classList.add('junto', 'impacto');
     }, 2700);
 
     setTimeout(function () { document.getElementById('splashSub').classList.add('show'); }, 3150);
