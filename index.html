@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XPeriencia: La FP se juega</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="b-title">XPeriencia</span>
+      <span class="b-sub">La FP se juega</span>
+    </div>
+    <div class="nav-actions">
+      <button class="nav-btn" id="contentBtn"><span class="ico">📚</span> Contenido</button>
+      <input type="file" id="contentFile" accept=".txt,.json" class="hidden">
+      <button class="nav-btn" id="endBtn"><span class="ico">🏁</span> Finalizar y ver resultados</button>
+    </div>
+  </div>
+
+  <div id="teamsPanel"></div>
+
+  <div id="stage">
+    <div id="timerWrap"><span>⏱</span><span class="t-num">--</span></div>
+    <div id="timeUpBanner"></div>
+    <div id="turnScreen"></div>
+  </div>
+
+  <div id="teacherControls"></div>
+
+</div>
+
+<!-- Overlay: elegir identidad de un nuevo equipo -->
+<div class="identity-overlay" id="identityOverlay">
+  <div class="identity-modal">
+    <h3>Elige la identidad del equipo</h3>
+    <div class="identity-grid" id="identityGrid"></div>
+    <button class="nav-btn" id="identityCancel" style="margin-top:14px">Cancelar</button>
+  </div>
+</div>
+
+<!-- Chivatini -->
+<div class="chiva-modal" id="chivaModal">
+  <div class="chiva-head">
+    <div class="chiva-portrait" id="chivaPortrait">👽</div>
+    <div class="chiva-name">Chivatini</div>
+  </div>
+  <div class="chiva-bubble" id="chivaBubble">
+    <div class="chiva-txt" id="chivaTxt"></div>
+    <div class="chiva-arrow" id="chivaArrow">▸</div>
+  </div>
+</div>
+
+<!-- Botón de ayuda / créditos -->
+<button class="help-btn" id="helpBtn" title="Ayuda e info">?</button>
+<div class="help-panel" id="helpPanel">
+  Creado por <strong style="color:#7FE0FF">Alberto Sánchez Cabanillas</strong><br>
+  Docente de Comercio y Marketing<br>
+  <a href="https://www.linkedin.com/in/albertosanchezcabanillas/" target="_blank">LinkedIn</a> ·
+  <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a>
+</div>
+
+<script src="motor.js"></script>
+<script src="chivatini.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
