@@ -29,10 +29,13 @@ var Sonido = (function () {
 
   function clic() { tono(520, 0.08, 'triangle', 0.08); }
   function avanzar() { tono(400, 0.1, 'sine', 0.1); tono(600, 0.12, 'sine', 0.08, 0.06); }
+  function seleccion() { tono(700, 0.07, 'triangle', 0.09); }
+  function listo() { tono(500, 0.08, 'sine', 0.09); tono(750, 0.1, 'sine', 0.08, 0.05); }
+  function transicion() { tono(300, 0.18, 'sine', 0.06); tono(500, 0.22, 'sine', 0.05, 0.08); }
   function acierto() { tono(660, 0.12, 'sine', 0.12); tono(880, 0.16, 'sine', 0.12, 0.09); tono(1100, 0.2, 'sine', 0.1, 0.18); }
   function fallo() { tono(180, 0.3, 'sawtooth', 0.1); tono(120, 0.35, 'sawtooth', 0.09, 0.08); }
   function tiempoAgotado() { tono(300, 0.15, 'square', 0.09); tono(150, 0.4, 'square', 0.1, 0.12); }
   function victoria() { [660, 880, 1100, 1320].forEach(function (f, i) { tono(f, 0.22, 'sine', 0.1, i * 0.12); }); }
 
-  return { clic: clic, avanzar: avanzar, acierto: acierto, fallo: fallo, tiempoAgotado: tiempoAgotado, victoria: victoria };
+  return { clic: clic, avanzar: avanzar, seleccion: seleccion, listo: listo, transicion: transicion, acierto: acierto, fallo: fallo, tiempoAgotado: tiempoAgotado, victoria: victoria };
 })();

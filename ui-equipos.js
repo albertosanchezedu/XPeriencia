@@ -10,18 +10,40 @@
   UI.screens.MODO = function () {
     refs.flowScreen.innerHTML =
       '<h2>¿Cómo jugáis hoy?</h2>' +
-      '<div class="muted">Elige el formato de la sesión</div>' +
+      '<div class="muted">Elige el formato de la sesión. Todos los modos tienen un final claro.</div>' +
       '<div class="mode-grid">' +
-      '<div class="mode-card" data-modo="libre"><div class="m-emoji emoji">🎯</div><div class="m-title">Modo libre</div><div class="m-desc">Jugáis lo que queráis y finalizáis cuando decidáis (usa "Finalizar" en el menú ?).</div></div>' +
-      '<div class="mode-card" data-modo="mejor3"><div class="m-emoji emoji">🥉</div><div class="m-title">Torneo · mejor de 3</div><div class="m-desc">3 rondas y termina sola: gana quien sume más puntos.</div></div>' +
-      '<div class="mode-card" data-modo="mejor5"><div class="m-emoji emoji">🥇</div><div class="m-title">Torneo · mejor de 5</div><div class="m-desc">5 rondas y termina sola: gana quien sume más puntos.</div></div>' +
-      '</div>';
+      '<div class="mode-card" data-modo="libre"><div class="m-emoji emoji">🎯</div><div class="m-title">Modo libre</div><div class="m-desc">Elige cuántas rondas jugáis.</div></div>' +
+      '<div class="mode-card" data-modo="mejor3"><div class="m-emoji emoji">🥉</div><div class="m-title">Torneo · mejor de 3</div><div class="m-desc">3 rondas y termina sola.</div></div>' +
+      '<div class="mode-card" data-modo="mejor5"><div class="m-emoji emoji">🥇</div><div class="m-title">Torneo · mejor de 5</div><div class="m-desc">5 rondas y termina sola.</div></div>' +
+      '</div>' +
+      '<div id="rondasPickerBox"></div>';
+
     refs.flowScreen.querySelectorAll('.mode-card').forEach(function (card) {
       card.onclick = function () {
-        Sonido.clic();
-        Motor.setModo(card.getAttribute('data-modo'));
-        Motor.setFase('EQUIPOS');
-        UI.render();
+        Sonido.seleccion();
+        var modo = card.getAttribute('data-modo');
+        refs.flowScreen.querySelectorAll('.mode-card').forEach(function (c) { c.style.borderColor = 'transparent'; });
+        card.style.borderColor = 'var(--accent-lima)';
+        if (modo !== 'libre') {
+          Motor.setModo(modo);
+          Sonido.avanzar();
+          Motor.setFase('EQUIPOS');
+          UI.render();
+          return;
+        }
+        document.getElementById('rondasPickerBox').innerHTML =
+          '<div class="muted" style="margin-top:14px">¿Cuántas rondas jugáis?</div>' +
+          '<div class="mode-grid" style="margin-top:8px">' +
+          [3, 5, 10, 15].map(function (n) { return '<div class="mode-card" data-rondas="' + n + '" style="min-width:100px;padding:16px 20px"><div class="m-title">' + n + '</div></div>'; }).join('') +
+          '</div>';
+        document.querySelectorAll('#rondasPickerBox .mode-card').forEach(function (rc) {
+          rc.onclick = function () {
+            Sonido.avanzar();
+            Motor.setModo('libre', parseInt(rc.getAttribute('data-rondas'), 10));
+            Motor.setFase('EQUIPOS');
+            UI.render();
+          };
+        });
       };
     });
   };
@@ -100,7 +122,9 @@
         e.stopPropagation();
         var id = btn.getAttribute('data-id');
         var eq = Motor.getEquipos().find(function (x) { return x.id === id; });
-        Motor.marcarListo(id, !eq.listo);
+        var estabaListo = eq.listo;
+        Motor.marcarListo(id, !estabaListo);
+        if (!estabaListo) Sonido.listo(); else Sonido.clic();
         pintarEquiposFlow();
       };
     });
@@ -122,12 +146,13 @@
   function abrirSelectorIdentidad(equipoExistente) {
     var editando = !!equipoExistente;
     document.getElementById('identityTitle').textContent = editando ? 'Editar equipo' : 'Elige la identidad del equipo';
-    var presets = Motor.presetsDisponibles(editando ? equipoExistente.id : undefined);
-    presetElegido = editando ? { nombre: equipoExistente.nombre, emoji: equipoExistente.emoji } : null;
+    // presetsDisponibles ya incluye la identidad actual del equipo que se edita
+    // (se excluye de "usados" para poder mantenerla seleccionada), así que no
+    // hay que añadirla aparte: eso era lo que causaba el símbolo duplicado.
+    var opciones = Motor.presetsDisponibles(editando ? equipoExistente.id : undefined);
+    presetElegido = editando ? { nombre: equipoExistente.nombre, emoji: equipoExistente.emoji } : opciones[0];
 
     function pintarGrid() {
-      var opciones = presets.slice();
-      if (editando) opciones.unshift({ nombre: equipoExistente.nombre, emoji: equipoExistente.emoji });
       UI.refs.identityGrid.innerHTML = opciones.map(function (p) {
         var sel = presetElegido && presetElegido.nombre === p.nombre;
         return '<div class="identity-opt' + (sel ? ' selected' : '') + '" data-nombre="' + p.nombre + '"><div class="emoji">' + p.emoji + '</div><div class="name">' + p.nombre + '</div></div>';
@@ -136,22 +161,16 @@
         opt.onclick = function () {
           var nombre = opt.getAttribute('data-nombre');
           presetElegido = opciones.find(function (p) { return p.nombre === nombre; });
+          Sonido.seleccion();
           pintarGrid();
-          document.getElementById('portavozStep').classList.remove('hidden');
         };
       });
     }
     pintarGrid();
 
-    var portavozStep = document.getElementById('portavozStep');
+    // el formulario de portavoz se ve siempre completo, sin pasos ocultos
     var portavozInput = document.getElementById('portavozInput');
-    if (editando) {
-      portavozStep.classList.remove('hidden');
-      portavozInput.value = equipoExistente.portavoz || '';
-    } else {
-      portavozStep.classList.add('hidden');
-      portavozInput.value = '';
-    }
+    portavozInput.value = editando ? (equipoExistente.portavoz || '') : '';
 
     document.getElementById('portavozSaveBtn').onclick = function () {
       if (!presetElegido) return;

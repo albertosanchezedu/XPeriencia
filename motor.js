@@ -40,8 +40,14 @@ var Motor = (function () {
   function getEstado() { return estadoActual; }
 
   /* ---------------- MODO DE PARTIDA ---------------- */
-  var modo = { tipo: 'libre', objetivoRondas: null };
-  function setModo(tipo) { modo.tipo = tipo; modo.objetivoRondas = tipo === 'mejor3' ? 3 : (tipo === 'mejor5' ? 5 : null); persistir(); }
+  var modo = { tipo: 'libre', objetivoRondas: 5 };
+  function setModo(tipo, rondas) {
+    modo.tipo = tipo;
+    if (tipo === 'mejor3') modo.objetivoRondas = 3;
+    else if (tipo === 'mejor5') modo.objetivoRondas = 5;
+    else modo.objetivoRondas = rondas || modo.objetivoRondas || 5;
+    persistir();
+  }
   function getModo() { return modo; }
   var rondaActual = 0;
   function incrementarRonda() { rondaActual++; persistir(); return rondaActual; }
@@ -269,7 +275,7 @@ var Motor = (function () {
       equipoActivoIdx = data.equipoActivoIdx || 0;
       contenido = data.contenido || null;
       estadoActual = data.estado || 'CONFIGURACION';
-      modo = data.modo || { tipo: 'libre', objetivoRondas: null };
+      modo = data.modo || { tipo: 'libre', objetivoRondas: 5 };
       rondaActual = data.rondaActual || 0;
       return true;
     } catch (e) { return false; }
@@ -277,7 +283,7 @@ var Motor = (function () {
   function reiniciarTodo() {
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
     fase = 'SPLASH'; equipos = []; equipoActivoIdx = 0; contenido = null;
-    estadoActual = 'CONFIGURACION'; modo = { tipo: 'libre', objetivoRondas: null }; rondaActual = 0;
+    estadoActual = 'CONFIGURACION'; modo = { tipo: 'libre', objetivoRondas: 5 }; rondaActual = 0;
     emit('app:reiniciada');
   }
 

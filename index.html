@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>XPeriencia: La FP se juega</title>
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body>
 
@@ -19,8 +19,11 @@
   </div>
 </div>
 
-<!-- ============ TRANSICIÓN "A JUGAR" ============ -->
-<div id="playIntro"><div class="txt">¡A JUGAR!</div></div>
+<!-- ============ TRANSICIÓN "A JUGAR" / SORTEO ============ -->
+<div id="playIntro"><div class="txt" id="playIntroContent">¡A JUGAR!</div></div>
+
+<!-- ============ FONDO DINÁMICO SUAVE (resto de pantallas) ============ -->
+<div id="appBgEmojis"></div>
 
 <!-- ============ APP ============ -->
 <div id="app">
@@ -31,7 +34,7 @@
   <div id="gameArea" class="hidden" style="display:flex;flex-direction:column;height:100%;">
     <div id="teamsPanel"></div>
     <div id="stage">
-      <div id="timerWrap"><span class="t-icon">⏱️</span><span class="t-num">--</span><span id="timerWarnText"></span></div>
+      <div id="timerWrap"><span class="t-icon">⏱️</span><span class="t-num">--</span></div>
       <div id="timeUpBanner"></div>
       <div id="turnScreen"></div>
       <div id="stageContent"></div>
@@ -45,9 +48,9 @@
   <div class="identity-modal">
     <h3 id="identityTitle">Elige la identidad del equipo</h3>
     <div class="identity-grid" id="identityGrid"></div>
-    <div class="portavoz-step hidden" id="portavozStep">
-      <div class="hint">Portavoz (opcional, para juegos de un solo jugador)</div>
-      <input type="text" id="portavozInput" placeholder="Nombre del portavoz" maxlength="24">
+    <div class="portavoz-step" id="portavozStep">
+      <div class="hint">Portavoz</div>
+      <input type="text" id="portavozInput" placeholder="Nombre del portavoz (opcional)" maxlength="24">
       <button class="big-cta" id="portavozSaveBtn">✓ Guardar</button>
     </div>
     <button class="flow-back" id="identityCancel" style="margin-top:14px">Cancelar</button>
@@ -88,11 +91,11 @@
   </div>
 </div>
 
-<script src="motor.js?v=6"></script>
-<script src="sonido.js?v=6"></script>
-<script src="chivatini.js?v=6"></script>
-<script src="ui-core.js?v=6"></script>
-<script src="ui-equipos.js?v=6"></script>
-<script src="ui-juego.js?v=6"></script>
+<script src="motor.js?v=7"></script>
+<script src="sonido.js?v=7"></script>
+<script src="chivatini.js?v=7"></script>
+<script src="ui-core.js?v=7"></script>
+<script src="ui-equipos.js?v=7"></script>
+<script src="ui-juego.js?v=7"></script>
 </body>
 </html>

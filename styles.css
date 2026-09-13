@@ -23,9 +23,8 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .hidden{display:none !important;}
 .emoji{font-family:var(--emoji-font);}
 
-/* ---------- Título discreto (abajo-izquierda durante la partida) ---------- */
-.title-chip{position:absolute;top:18px;left:24px;z-index:15;font-weight:900;font-size:16px;color:var(--text-dark);opacity:.85;transition:top .25s ease,bottom .25s ease,left .25s ease,font-size .2s ease;}
-.title-chip.in-game{top:auto;bottom:14px;left:14px;font-size:13px;opacity:.6;}
+/* ---------- Título discreto (siempre arriba-izquierda) ---------- */
+.title-chip{position:absolute;top:18px;left:24px;z-index:15;font-weight:900;font-size:16px;color:var(--text-dark);opacity:.85;}
 
 /* ===================================================================
    TRANSICIÓN ENTRE PANTALLAS
@@ -50,16 +49,28 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
   94%{opacity:.35;}
   100%{transform:translateY(-135vh) translateX(40px) rotate(30deg);opacity:0;}
 }
+
+/* ---- Fondo dinámico y sutil para el resto de pantallas (equipos, juegos...) ---- */
+#appBgEmojis{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.bg-float-emoji{position:absolute;font-family:var(--emoji-font);opacity:0;animation-name:floatUpSubtle;animation-timing-function:linear;animation-iteration-count:infinite;}
+@keyframes floatUpSubtle{
+  0%{transform:translateY(0) translateX(0) rotate(0deg);opacity:0;}
+  8%{opacity:.14;}
+  92%{opacity:.14;}
+  100%{transform:translateY(-135vh) translateX(30px) rotate(20deg);opacity:0;}
+}
+#app{position:relative;z-index:1;}
 .splash-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:220px;justify-content:center;}
 
-/* ---- Título con chip "XP" fijo y el resto revelándose a la derecha ---- */
+/* ---- Título con chip "XP" que termina unido al resto ---- */
 #introSeq{font-size:72px;font-weight:900;letter-spacing:-.01em;display:flex;align-items:baseline;}
-#introChip{background:var(--accent-lima);color:var(--text-dark);padding:2px 18px;border-radius:16px;display:inline-block;transition:transform .28s cubic-bezier(.3,1.6,.4,1);}
-#introChip.pulse{animation:chipPulse .4s ease;}
+#introChip{background:var(--accent-lima);color:var(--text-dark);padding:2px 18px;border-radius:16px;display:inline-block;transition:transform .5s cubic-bezier(.3,1.1,.3,1),margin .5s cubic-bezier(.3,1.1,.3,1);margin-right:22px;}
+#introChip.pulse{animation:chipPulse .55s ease;}
+#introChip.junto{margin-right:0;transform:translateX(4px);}
 @keyframes chipPulse{0%{transform:scale(1);}45%{transform:scale(1.18) rotate(-3deg);}100%{transform:scale(1);}}
-#introColon{transition:opacity .25s ease,width .25s ease;display:inline-block;}
+#introColon{transition:opacity .3s ease,width .3s ease;display:inline-block;}
 #introColon.gone{opacity:0;width:0;overflow:hidden;}
-#introRest{display:inline-block;overflow:hidden;white-space:nowrap;width:0;transition:width .55s cubic-bezier(.2,.7,.2,1);}
+#introRest{display:inline-block;overflow:hidden;white-space:nowrap;width:0;transition:width .75s cubic-bezier(.2,.7,.2,1);}
 #introRest.reveal{width:6.2em;}
 
 .splash-sub{font-size:24px;font-style:italic;font-weight:400;color:var(--text-muted-dark);margin-bottom:18px;opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s cubic-bezier(.2,.8,.3,1);}
@@ -147,14 +158,14 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .game-card .soon-badge{position:absolute;top:-9px;right:-9px;background:var(--accent-orange);color:#fff;font-size:9.5px;font-weight:900;padding:3px 8px;border-radius:99px;box-shadow:0 3px 8px rgba(0,0,0,.2);}
 .game-card .g-emoji{font-size:34px;font-family:var(--emoji-font);}
 .game-card .g-title{font-weight:900;font-size:16px;margin-top:6px;}
-.game-desc-box{background:rgba(255,255,255,.6);border-radius:var(--radius-m);padding:14px 20px;max-width:640px;font-size:13.5px;color:var(--text-muted-dark);min-height:20px;}
+.game-desc-box{background:rgba(255,255,255,.6);border-radius:var(--radius-m);padding:14px 20px;max-width:640px;width:100%;min-height:64px;height:64px;overflow:auto;font-size:13.5px;color:var(--text-muted-dark);display:flex;align-items:center;justify-content:center;text-align:center;}
 .content-loaded-box{background:#fff;border-radius:var(--radius-m);padding:16px 22px;box-shadow:var(--shadow-soft);font-size:14px;max-width:480px;}
 .content-loaded-box .ok-tag{color:#3E8A5B;font-weight:900;}
 
 /* ===================================================================
    ESCENARIO DE JUEGO
    =================================================================== */
-#gameArea{padding-bottom:14px;}
+#gameArea{padding-bottom:44px;padding-top:6px;}
 #stage{flex:1;min-height:0;background:rgba(255,255,255,.42);border-radius:var(--radius-l);display:flex;flex-direction:column;position:relative;overflow:hidden;}
 #stageContent{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;position:relative;}
 #teamsPanel{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 16px 0;flex-shrink:0;padding:2px 120px 2px 2px;justify-content:center;}
@@ -174,15 +185,13 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .team-card.sorteo-flash{animation:sorteoFlash .18s ease;}
 @keyframes sorteoFlash{0%{box-shadow:0 0 0 0 rgba(207,255,4,0);}50%{box-shadow:0 0 0 6px rgba(207,255,4,.5);}100%{box-shadow:0 0 0 0 rgba(207,255,4,0);}}
 
-/* ---- Temporizador: icono, tamaño y márgenes correctos ---- */
-#timerWrap{position:absolute;top:16px;right:16px;display:flex;flex-direction:row-reverse;align-items:center;gap:10px;background:var(--panel-dark);color:var(--text-light);padding:10px 20px;border-radius:99px;box-shadow:var(--shadow-panel);z-index:5;}
-#timerWrap .t-icon{font-family:var(--emoji-font);font-size:20px;}
-#timerWrap .t-num{font-size:32px;font-weight:900;font-variant-numeric:tabular-nums;min-width:1.3em;text-align:center;}
+/* ---- Temporizador: icono a la izquierda del número, simple y claro ---- */
+#timerWrap{position:absolute;top:16px;right:16px;display:flex;flex-direction:row;align-items:center;gap:9px;background:var(--panel-dark);color:var(--text-light);padding:10px 20px;border-radius:99px;box-shadow:var(--shadow-panel);z-index:5;}
+#timerWrap .t-icon{font-family:var(--emoji-font);font-size:19px;}
+#timerWrap .t-num{font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;min-width:1.3em;text-align:center;}
 #timerWrap.warn .t-num{color:var(--accent-orange);}
 #timerWrap.danger .t-num{color:var(--accent-red);animation:pulseDanger .6s infinite;}
 @keyframes pulseDanger{0%,100%{opacity:1;}50%{opacity:.4;}}
-#timerWarnText{max-width:0;overflow:hidden;white-space:nowrap;font-size:13px;font-weight:700;color:var(--accent-orange);transition:max-width .3s ease;}
-#timerWarnText.show{max-width:160px;}
 
 #timeUpBanner{display:none;position:absolute;inset:0;background:rgba(60,10,15,.9);color:#fff;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-size:36px;font-weight:900;z-index:20;border-radius:var(--radius-l);}
 #timeUpBanner.shake{animation:catastrofeShake .5s ease;}
@@ -191,10 +200,19 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 @keyframes catastrofeEmoji{0%{transform:scale(0) rotate(0);}60%{transform:scale(1.3) rotate(-10deg);}100%{transform:scale(1) rotate(0);}}
 .timeup-actions{display:flex;gap:10px;margin-top:6px;}
 
-#turnScreen{position:absolute;inset:0;background:var(--panel-dark);display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:30;color:#fff;text-align:center;border-radius:var(--radius-l);}
+#turnScreen{position:absolute;inset:0;background:var(--panel-dark);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:30;color:#fff;text-align:center;border-radius:var(--radius-l);opacity:0;pointer-events:none;transition:opacity .3s ease;}
+#turnScreen.show{opacity:1;pointer-events:auto;}
 #turnScreen .label{font-size:14px;color:rgba(255,255,255,.55);font-weight:700;}
 #turnScreen .team{font-size:44px;font-weight:900;display:flex;align-items:center;gap:14px;}
 #turnScreen .portavoz-call{font-size:16px;color:var(--accent-cyan);font-weight:700;}
+
+/* ---- Cuadro de pregunta: fundido suave al cambiar de contenido ---- */
+#stageContent{opacity:0;transition:opacity .28s ease;}
+#stageContent.show{opacity:1;}
+
+/* ---- Fallo: pequeño flash rojo en vez de mensaje flotante ---- */
+#stageContent.flash-fail{animation:flashFail .4s ease;}
+@keyframes flashFail{0%,100%{background:transparent;}40%{background:rgba(255,45,85,.14);}}
 
 /* ---- Celebración de acierto ---- */
 .celebra-burst{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;z-index:15;}
@@ -263,7 +281,9 @@ h1,h2,h3{font-family:'Fira Sans',sans-serif;font-weight:900;line-height:1.08;}
 .help-panel{position:fixed;bottom:48px;right:14px;background:var(--panel-dark);border:2px solid var(--panel-dark-border);border-radius:14px;padding:16px;z-index:91;width:290px;box-shadow:var(--shadow-panel);opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .18s ease,transform .18s ease;font-size:12px;color:#dff7ff;line-height:1.5;text-align:left;}
 .help-panel.open{opacity:1;transform:translateY(0);pointer-events:auto;}
 .help-panel a{color:rgba(127,224,255,.8);}
-.help-panel .hp-actions{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.help-panel .hp-actions{display:flex;flex-direction:column;gap:6px;margin-bottom:0;}
+.help-panel .hp-actions:not(:empty){margin-bottom:12px;}
 .help-panel .hp-btn{background:rgba(127,224,255,.1);border:1px solid rgba(127,224,255,.25);color:#dff7ff;font-family:inherit;font-weight:700;font-size:12.5px;padding:9px 12px;border-radius:10px;cursor:pointer;text-align:left;transition:background .15s;}
 .help-panel .hp-btn:hover{background:rgba(127,224,255,.22);}
-.help-panel .hp-divider{border-top:1px solid rgba(127,224,255,.2);margin:10px 0;padding-top:10px;}
+.help-panel .hp-divider{margin:0;padding-top:0;}
+.help-panel .hp-divider.with-actions{border-top:1px solid rgba(127,224,255,.2);margin-top:10px;padding-top:10px;}

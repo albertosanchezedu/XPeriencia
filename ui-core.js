@@ -14,7 +14,6 @@ var UI = (function () {
     turnScreen: document.getElementById('turnScreen'),
     timeUpBanner: document.getElementById('timeUpBanner'),
     timerWrap: document.getElementById('timerWrap'),
-    timerWarnText: document.getElementById('timerWarnText'),
     identityOverlay: document.getElementById('identityOverlay'),
     identityGrid: document.getElementById('identityGrid'),
     contentFileInput: document.getElementById('contentFile'),
@@ -47,51 +46,64 @@ var UI = (function () {
   }
   pintarEmojisFondo();
 
-  /* =================== Secuencia de intro: XP fijo, "eriencia" se despliega =================== */
+  /* ---- Fondo dinámico sutil para el resto de pantallas (menos denso, más lento) ---- */
+  function pintarBgEmojisApp() {
+    var cont = document.getElementById('appBgEmojis');
+    var html = '';
+    var total = 10;
+    for (var i = 0; i < total; i++) {
+      var e = EMOJIS_FONDO[(i * 3) % EMOJIS_FONDO.length];
+      var left = Math.random() * 96;
+      var delay = Math.random() * 22;
+      var dur = 22 + Math.random() * 14;
+      var size = 30 + Math.random() * 30;
+      html += '<span class="bg-float-emoji" style="left:' + left + '%;bottom:-80px;font-size:' + size + 'px;animation-duration:' + dur + 's;animation-delay:-' + delay + 's;">' + e + '</span>';
+    }
+    cont.innerHTML = html;
+  }
+  pintarBgEmojisApp();
+
+  /* =================== Secuencia de intro: XP y "eriencia" terminan juntos =================== */
   function reproducirIntro(callback) {
     var chip = document.getElementById('introChip');
     var colon = document.getElementById('introColon');
     var rest = document.getElementById('introRest');
     chip.textContent = 'FP';
+    chip.classList.remove('junto');
+    colon.classList.remove('gone');
+    rest.classList.remove('reveal');
+    rest.textContent = '';
 
     setTimeout(function () {
       colon.classList.add('gone');
       chip.classList.add('pulse');
-      setTimeout(function () { chip.textContent = 'XP'; }, 120);
-    }, 500);
+      setTimeout(function () { chip.textContent = 'XP'; }, 160);
+    }, 900);
 
     setTimeout(function () {
       rest.textContent = 'eriencia';
       rest.classList.add('reveal');
-    }, 950);
+    }, 1750);
 
-    setTimeout(function () { document.getElementById('splashSub').classList.add('show'); }, 1550);
+    setTimeout(function () { chip.classList.add('junto'); }, 2650);
+
+    setTimeout(function () { document.getElementById('splashSub').classList.add('show'); }, 3150);
     setTimeout(function () {
       document.getElementById('splashStartBtn').classList.add('show');
       if (Motor.haySesionGuardada()) document.getElementById('splashContinueBtn').classList.add('show');
       if (callback) callback();
-    }, 1850);
+    }, 3500);
   }
 
-  function mostrarEstadoFinalIntro() {
-    document.getElementById('introChip').textContent = 'XP';
-    document.getElementById('introColon').classList.add('gone');
-    var rest = document.getElementById('introRest');
-    rest.textContent = 'eriencia';
-    rest.classList.add('reveal');
-    document.getElementById('splashSub').classList.add('show');
-    document.getElementById('splashStartBtn').classList.add('show');
-    document.getElementById('splashContinueBtn').classList.toggle('show', Motor.haySesionGuardada());
-  }
-
-  var introYaVista = false;
   function mostrarSplash() {
     refs.splashScreen.style.display = 'flex';
     refs.flowScreen.classList.add('hidden');
     refs.gameArea.classList.add('hidden');
-    refs.titleChip.classList.remove('in-game');
-    if (!introYaVista) { introYaVista = true; reproducirIntro(); }
-    else mostrarEstadoFinalIntro();
+    // la animación de apertura se repite siempre que se vuelve a la portada
+    document.getElementById('splashSub').classList.remove('show');
+    document.getElementById('splashStartBtn').classList.remove('show');
+    document.getElementById('splashContinueBtn').classList.remove('show');
+    reproducirIntro();
   }
 
   document.getElementById('splashStartBtn').onclick = function () {
@@ -125,12 +137,10 @@ var UI = (function () {
     if (fase === 'JUGANDO') {
       refs.flowScreen.classList.add('hidden');
       refs.gameArea.classList.remove('hidden');
-      refs.titleChip.classList.add('in-game');
       if (screens.JUGANDO) screens.JUGANDO();
       renderHelpPanel();
       return;
     }
-    refs.titleChip.classList.remove('in-game');
     refs.gameArea.classList.add('hidden');
     refs.flowScreen.classList.remove('hidden');
     refs.flowScreen.classList.remove('enter');
@@ -158,6 +168,7 @@ var UI = (function () {
     document.getElementById('hpActions').innerHTML = botones.map(function (b, i) {
       return '<button class="hp-btn" data-i="' + i + '">' + b.label + '</button>';
     }).join('');
+    document.querySelector('.hp-divider').classList.toggle('with-actions', botones.length > 0);
     document.querySelectorAll('#hpActions .hp-btn').forEach(function (btn, i) {
       btn.onclick = function () { helpPanel.classList.remove('open'); if (botones[i].fn) botones[i].fn(); };
     });
