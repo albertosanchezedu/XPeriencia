@@ -150,13 +150,14 @@
 
   /* =================== SORTEO DEL EQUIPO INICIAL =================== */
   var saltarPantallaTurno = false;
-  var DURACION_TOTAL = 210; // 3:30, todo el "Calentamiento"
-  var restanteTotal = DURACION_TOTAL;
-  var handleTotal = null;
+  var rondaObjetivo = 10;
+  var rondaActualCalentamiento = 0;
 
   function empezarPartida() {
     Motor.reiniciarRonda();
     usadasPorEquipo = {};
+    rondaActualCalentamiento = 0;
+    rondaObjetivo = Motor.getEquipos().length * 3;
     Sonido.transicion();
     var equipos = Motor.getEquipos();
     var cont = document.getElementById('playIntroContent');
@@ -207,7 +208,7 @@
   function lanzarTransicionFinal() {
     Sonido.transicion();
     var cont = document.getElementById('playIntroContent');
-    cont.innerHTML = '<div class="txt">¡A JUGAR!</div>';
+    cont.innerHTML = '<div class="txt">¡A JUGAR!</div><div style="font-size:20px;font-weight:900;color:var(--accent-cyan);margin-top:14px">Ronda 1/' + rondaObjetivo + '</div>';
     setTimeout(function () {
       refs.playIntro.classList.remove('show');
       saltarPantallaTurno = true;
@@ -221,7 +222,7 @@
 
   UI.screens.JUGANDO = function () {
     renderTeamsPanel(true);
-    iniciarTemporizadorTotal();
+    pintarRonda();
     if (saltarPantallaTurno) {
       saltarPantallaTurno = false;
       preguntasEnRacha = 0;
@@ -231,29 +232,16 @@
     }
   };
 
-  function iniciarTemporizadorTotal() {
-    clearInterval(handleTotal);
-    restanteTotal = DURACION_TOTAL;
-    pintarTotal();
-    handleTotal = setInterval(function () {
-      restanteTotal--;
-      pintarTotal();
-      if (restanteTotal <= 0) { clearInterval(handleTotal); irAResultados(); }
-    }, 1000);
-  }
-  function pintarTotal() {
-    var el = document.getElementById('overallTimer');
-    if (!el) return;
-    var m = Math.floor(restanteTotal / 60), s = restanteTotal % 60;
-    el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
-    el.classList.toggle('danger', restanteTotal <= 20);
+  function pintarRonda() {
+    var el = document.getElementById('rondaIndicador');
+    if (el) el.textContent = 'Ronda ' + Math.min(rondaActualCalentamiento + 1, rondaObjetivo) + '/' + rondaObjetivo;
   }
 
   function renderTeamsPanel(animar) {
     var equipos = Motor.getEquipos();
     var activoIdx = Motor.getEquipoActivoIdx();
     refs.teamsPanel.innerHTML =
-      '<div id="overallTimer" class="overall-timer" style="align-self:center">' + Math.floor(DURACION_TOTAL / 60) + ':' + (DURACION_TOTAL % 60) + '</div>' +
+      '<div id="rondaIndicador" class="overall-timer" style="align-self:center">Ronda 1/' + rondaObjetivo + '</div>' +
       equipos.map(function (eq, i) {
         return '<div class="team-card' + (i === activoIdx ? ' active' : '') + '">' +
           '<span class="now-playing">▶ Ahora juega</span>' +
@@ -265,7 +253,7 @@
     var cards = refs.teamsPanel.querySelectorAll('.team-card');
     if (animar) cards.forEach(function (c, i) { setTimeout(function () { c.classList.add('appear'); }, i * 80); });
     else cards.forEach(function (c) { c.classList.add('appear'); });
-    pintarTotal();
+    pintarRonda();
   }
   Motor.on('puntuacion:cambio', function (d) {
     var el = document.getElementById('score-' + d.equipo.id);
@@ -383,7 +371,16 @@
     Motor.detenerTemporizador();
     mostrarFeedbackGrande('fail', 'RESPUESTA INCORRECTA', '😬');
     preguntasEnRacha = 0;
-    setTimeout(function () { Motor.siguienteEquipo(); }, 1000);
+    avanzarRonda();
+  }
+
+  function avanzarRonda() {
+    rondaActualCalentamiento++;
+    pintarRonda();
+    setTimeout(function () {
+      if (rondaActualCalentamiento >= rondaObjetivo) irAResultados();
+      else Motor.siguienteEquipo();
+    }, 1000);
   }
 
   function evaluarVF(marcadaVerdadera) {
@@ -398,7 +395,10 @@
       mostrarFeedbackGrande('ok', '¡GENIAL!', '🎉');
       volarPuntos(equipo, 10);
       preguntasEnRacha++;
+      rondaActualCalentamiento++;
+      pintarRonda();
       setTimeout(function () {
+        if (rondaActualCalentamiento >= rondaObjetivo) { irAResultados(); return; }
         if (preguntasEnRacha < 2) renderReto();
         else Motor.siguienteEquipo();
       }, 1050);
@@ -406,7 +406,12 @@
       Sonido.fallo();
       mostrarFeedbackGrande('fail', 'RESPUESTA INCORRECTA', '😬');
       preguntasEnRacha = 0;
-      setTimeout(function () { Motor.siguienteEquipo(); }, 1050);
+      rondaActualCalentamiento++;
+      pintarRonda();
+      setTimeout(function () {
+        if (rondaActualCalentamiento >= rondaObjetivo) irAResultados();
+        else Motor.siguienteEquipo();
+      }, 1050);
     }
   }
 
@@ -475,9 +480,9 @@
   }
 
   /* =================== RESULTADOS / TROFEO =================== */
-  function irAResultados() { Motor.detenerTemporizador(); clearInterval(handleTotal); Motor.setFase('RESULTADOS'); UI.render(); }
+  function irAResultados() { Motor.detenerTemporizador(); Motor.setFase('RESULTADOS'); UI.render(); }
   UI.actions.finalizar = irAResultados;
-  UI.actions.detenerJuegoActual = function () { Motor.detenerTemporizador(); clearInterval(handleTotal); };
+  UI.actions.detenerJuegoActual = function () { Motor.detenerTemporizador(); };
 
   UI.screens.RESULTADOS = function () {
     Sonido.victoria();

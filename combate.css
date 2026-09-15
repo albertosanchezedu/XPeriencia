@@ -67,17 +67,21 @@
 .combate-poder-btn{font-family:inherit;font-weight:700;font-size:12px;padding:8px 10px;border-radius:10px;border:none;background:var(--panel-dark);color:#fff;cursor:pointer;transition:transform .12s;}
 .combate-poder-btn:hover{transform:translateY(-2px);}
 
-/* ---- Cuerda (tira y afloja): condición de victoria visual ---- */
-.cuerda-track{position:relative;display:flex;align-items:center;gap:10px;max-width:520px;margin:0 auto 10px;z-index:1;padding:0 8px;}
-.cuerda-linea{flex:1;height:6px;background:#8a5a2b;border-radius:3px;position:relative;}
-.cuerda-centro{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:3px;height:22px;background:rgba(20,23,26,.35);}
-.cuerda-nudo{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:22px;transition:left .4s cubic-bezier(.3,.7,.3,1.2);z-index:2;}
-.cuerda-extremo{font-family:var(--emoji-font);font-size:20px;}
-.combate-ganador-banner{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(20,23,26,.85);color:var(--accent-lima);font-weight:900;font-size:26px;text-align:center;padding:20px;border-radius:var(--radius-l);animation:sorpresaPop 1.6s ease forwards;}
 
-/* ---- Inventario de bonus (guardados, se usan cuando el equipo quiera) ---- */
-.combate-inventario{position:absolute;top:8px;left:8px;display:flex;gap:5px;z-index:6;}
-.combate-bonus-icono{background:var(--accent-gold);border:2px solid #fff;border-radius:10px;width:34px;height:34px;font-size:16px;cursor:pointer;box-shadow:var(--shadow-soft);transition:transform .12s;}
+/* ---- Cuerda (tira y afloja): dos bolas conectadas, se mueven en bloque ---- */
+.cuerda-track{position:relative;height:64px;max-width:640px;margin:0 auto 10px;z-index:1;}
+.cuerda-centro{position:absolute;left:50%;top:0;bottom:0;transform:translateX(-50%);width:4px;background:var(--accent-red);border-radius:2px;}
+.cuerda-pista-izq,.cuerda-pista-der{position:absolute;top:2px;font-size:11px;font-weight:800;color:var(--text-muted-dark);width:45%;}
+.cuerda-pista-izq{left:0;text-align:left;}
+.cuerda-pista-der{right:0;text-align:right;}
+.cuerda-barra{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;transition:transform .5s cubic-bezier(.3,.7,.3,1.15);width:200px;justify-content:space-between;}
+.cuerda-linea{flex:1;height:6px;background:#8a5a2b;border-radius:3px;}
+.cuerda-bola{font-family:var(--emoji-font);font-size:30px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25));}
+.combate-ganador-banner{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(20,23,26,.9);color:var(--accent-lima);font-weight:900;font-size:32px;text-align:center;padding:20px;animation:sorpresaPop 2.1s ease forwards;}
+
+/* ---- Inventario de bonus: en flujo normal, debajo de los equipos ---- */
+.combate-inventario{display:flex;gap:5px;padding:4px 16px 0;flex-wrap:wrap;min-height:26px;}
+.combate-bonus-icono{background:var(--accent-gold);border:2px solid #fff;border-radius:10px;width:32px;height:32px;font-size:15px;cursor:pointer;box-shadow:var(--shadow-soft);transition:transform .12s;}
 .combate-bonus-icono:hover{transform:scale(1.15) rotate(-4deg);}
 
 /* ---- Bloqueo / apagón que recibe el rival ---- */
