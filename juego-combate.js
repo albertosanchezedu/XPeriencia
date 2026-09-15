@@ -1,7 +1,5 @@
 /* ===================================================================
-   EL COMBATE — módulo independiente (v3: simplificado)
-   Sin sala de castigo, sin temporizador por pregunta.
-   Acierto suma puntos, fallo resta. Cronómetro global de partida.
+   EL COMBATE — módulo independiente (v4: tira y afloja + bonus guardables)
    =================================================================== */
 
 var Combate = (function () {
@@ -11,14 +9,16 @@ var Combate = (function () {
   var RACHA_PARA_FUROR = 3;
   var PUNTOS_ACIERTO = 10;
   var PUNTOS_FALLO = -10;
+  var PASO_CUERDA = 0.07; // avance normal por acierto (rango -1..1)
 
   var area;
   var lados = {};
   var enJuego = false;
   var handleTotal = null, restanteTotal = DURACION_TOTAL, pausado = false;
   var usadasPorEquipo = {};
+  var posicionCuerda = 0; // -1 = gana rojo, +1 = gana azul
 
-  var EMOJIS_FONDO = ['📦','🚚','🛒','🏬','📈','🏷️','💻','⚙️','🔧','🚗','🩺','🍽️','✂️','🎨','🌾','🖊️','🔬','📐'];
+  var EMOJIS_FONDO = ['📦', '🚚', '🛒', '🏬', '📈', '🏷️', '💻', '⚙️', '🔧', '🚗', '🩺', '🍽️', '✂️', '🎨', '🌾', '🖊️', '🔬', '📐'];
   function pintarFondoCombate() {
     var html = '';
     for (var i = 0; i < 12; i++) {
@@ -49,7 +49,7 @@ var Combate = (function () {
     area.classList.remove('hidden');
     area.innerHTML =
       '<div id="combateSorteo"><div class="titulo">⚔️ El combate</div>' +
-      '<div class="muted" style="color:rgba(255,255,255,.7);max-width:520px;margin:-14px 0 22px">Cada equipo de su bando responde <strong>2 preguntas</strong> y luego le toca al siguiente compañero del mismo bando. Arriba de cada lado verás quién responde ahora.</div>' +
+      '<div class="muted" style="color:rgba(255,255,255,.7);max-width:540px;margin:-14px 0 22px">Cada equipo de su bando responde <strong>2 preguntas</strong> y luego le toca al siguiente compañero. Es un tira y afloja: cada acierto arrastra la cuerda hacia vuestro lado. Si arrastráis al rival hasta vuestro extremo, ¡ganáis al instante!</div>' +
       '<div class="combate-bandos-preview">' +
       '<div class="combate-bando-col rojo"><div class="bando-nombre">🔴 BANDO ROJO</div><div id="colRojo"></div></div>' +
       '<div id="sorteoCentro" class="sorteo-centro"></div>' +
@@ -99,7 +99,7 @@ var Combate = (function () {
   }
 
   function crearEstadoLado(equipos) {
-    return { equipos: equipos, activoIdx: 0, streak: 0, rachaFuror: 0, preguntaActual: null, poderDisponible: false, bloqueadoHasta: 0 };
+    return { equipos: equipos, activoIdx: 0, streak: 0, rachaFuror: 0, preguntaActual: null, bloqueadoHasta: 0, inventario: [] };
   }
 
   function empezarArena(grupoRojo, grupoAzul) {
@@ -108,21 +108,27 @@ var Combate = (function () {
     enJuego = true;
     Motor.setFase('JUGANDO');
     restanteTotal = DURACION_TOTAL;
+    posicionCuerda = 0;
     pausado = false;
 
     area.innerHTML = pintarFondoCombate() +
-      '<div style="text-align:center;margin-bottom:8px;position:relative;z-index:1"><span class="timer-pill" id="combateTotalTimer"><span class="t-icon">⏱️</span><span class="t-num">3:00</span></span></div>' +
+      '<div style="text-align:center;margin-bottom:6px;position:relative;z-index:1"><span class="timer-pill" id="combateTotalTimer"><span class="t-icon">⏱️</span><span class="t-num">3:00</span></span></div>' +
+      '<div class="cuerda-track" id="cuerdaTrack">' +
+      '<span class="cuerda-extremo">🔴</span><div class="cuerda-linea"></div><div class="cuerda-centro"></div><div class="cuerda-nudo" id="cuerdaNudo">🪢</div><span class="cuerda-extremo">🔵</span>' +
+      '</div>' +
       '<div id="combateArena">' +
       '<div class="combate-lado rojo" id="lado-rojo"></div>' +
       '<div class="combate-divisor"></div>' +
       '<div class="combate-lado azul" id="lado-azul"></div>' +
       '</div>';
 
+    pintarCuerda();
+
     clearInterval(handleTotal);
     handleTotal = setInterval(function () {
       restanteTotal--;
       pintarTotalCombate();
-      if (restanteTotal <= 0) finalizar();
+      if (restanteTotal <= 0) finalizar(null);
     }, 1000);
     pintarTotalCombate();
 
@@ -134,7 +140,7 @@ var Combate = (function () {
       if (pausado) { clearInterval(handleTotal); el.classList.add('pausado'); }
       else {
         el.classList.remove('pausado');
-        handleTotal = setInterval(function () { restanteTotal--; pintarTotalCombate(); if (restanteTotal <= 0) finalizar(); }, 1000);
+        handleTotal = setInterval(function () { restanteTotal--; pintarTotalCombate(); if (restanteTotal <= 0) finalizar(null); }, 1000);
       }
     };
 
@@ -148,6 +154,25 @@ var Combate = (function () {
     var m = Math.floor(restanteTotal / 60), s = restanteTotal % 60;
     el.querySelector('.t-num').textContent = m + ':' + (s < 10 ? '0' : '') + s;
     el.classList.toggle('danger', restanteTotal <= 20);
+  }
+
+  /* ---------------- CUERDA (tira y afloja) ---------------- */
+  function pintarCuerda() {
+    var nudo = document.getElementById('cuerdaNudo');
+    if (!nudo) return;
+    var pct = 50 + posicionCuerda * 42; // deja margen para no pisar los extremos
+    nudo.style.left = pct + '%';
+  }
+
+  function moverCuerda(lado, furor) {
+    var paso = PASO_CUERDA * (furor ? 2 : 1);
+    posicionCuerda += (lado === 'rojo' ? -paso : paso);
+    if (posicionCuerda < -1) posicionCuerda = -1;
+    if (posicionCuerda > 1) posicionCuerda = 1;
+    pintarCuerda();
+    if (posicionCuerda <= -1) { finalizar('rojo'); return true; }
+    if (posicionCuerda >= 1) { finalizar('azul'); return true; }
+    return false;
   }
 
   function equipoActivo(lado) { var l = lados[lado]; return l.equipos[l.activoIdx % l.equipos.length]; }
@@ -166,9 +191,6 @@ var Combate = (function () {
     return barajarOpciones(elegida);
   }
 
-  // Evita que la respuesta correcta caiga siempre en la misma posición:
-  // devuelve una COPIA de la pregunta con las opciones barajadas y el
-  // índice correcto recalculado, sin tocar el original.
   function barajarOpciones(pregunta) {
     var indices = pregunta.options.map(function (_, i) { return i; });
     for (var i = indices.length - 1; i > 0; i--) {
@@ -183,6 +205,8 @@ var Combate = (function () {
     copia.correct_index = nuevoCorrectIndex;
     return copia;
   }
+
+  var NOMBRE_BONUS = { bloqueo: '🔒 Bloqueo', apagon: '⚫ Apagón', glitch: '📺 Glitch', locos: '🎲 Botones locos' };
 
   function renderLado(lado) {
     var l = lados[lado];
@@ -202,18 +226,12 @@ var Combate = (function () {
       return '<button class="combate-opcion" data-i="' + i + '"><span class="combate-opcion-letra">' + letras[i] + '</span>' + op + '</button>';
     }).join('');
 
-    var poderesHtml = '';
-    if (l.poderDisponible) {
-      poderesHtml =
-        '<div class="combate-poderes">' +
-        '<div class="combate-poderes-label">🔥 ¡Usa un poder contra el rival!</div>' +
-        '<button class="combate-poder-btn" data-poder="bloqueo">🔒 Bloquear 5s</button>' +
-        '<button class="combate-poder-btn" data-poder="apagon">⚫ Apagón 4s</button>' +
-        '<button class="combate-poder-btn" data-poder="cambiar">🔀 Cambiar su pregunta</button>' +
-        '</div>';
-    }
+    var inventarioHtml = l.inventario.map(function (tipo, i) {
+      return '<button class="combate-bonus-icono" data-i="' + i + '" title="' + NOMBRE_BONUS[tipo] + '">' + NOMBRE_BONUS[tipo].split(' ')[0] + '</button>';
+    }).join('');
 
     cont.innerHTML =
+      '<div class="combate-inventario" id="inv-' + lado + '">' + inventarioHtml + '</div>' +
       '<div class="combate-responde">▶ Responde ahora: ' + equipoResponde.emoji + ' ' + equipoResponde.nombre + '</div>' +
       '<div class="combate-header">' +
       '<div class="combate-miembros">' + membrete + '</div>' +
@@ -224,32 +242,40 @@ var Combate = (function () {
       '<h3>' + (l.preguntaActual ? l.preguntaActual.question : 'Sin más preguntas disponibles') + '</h3>' +
       '<div class="combate-opciones-grid">' + botonesHtml + '</div>' +
       '</div>' +
-      poderesHtml +
       '<div class="combate-bloqueo-overlay" id="bloqueo-' + lado + '"></div>';
 
     cont.querySelectorAll('.combate-opcion').forEach(function (btn) {
       btn.onclick = function () { evaluarLado(lado, parseInt(btn.getAttribute('data-i'), 10), btn); };
     });
-    cont.querySelectorAll('.combate-poder-btn').forEach(function (btn) {
-      btn.onclick = function () { usarPoder(lado, btn.getAttribute('data-poder')); };
+    cont.querySelectorAll('.combate-bonus-icono').forEach(function (btn) {
+      btn.onclick = function () {
+        var idx = parseInt(btn.getAttribute('data-i'), 10);
+        var tipo = l.inventario[idx];
+        if (!tipo) return;
+        l.inventario.splice(idx, 1);
+        Sonido.avanzar();
+        aplicarEfectoSobre(rivalDe(lado), tipo);
+        renderLado(lado);
+      };
     });
   }
 
   function rivalDe(lado) { return lado === 'rojo' ? 'azul' : 'rojo'; }
 
-  function activarCajaSorpresa(lado) {
-    var rival = rivalDe(lado);
+  // Al acertar, en vez de aplicarse solo, el bonus se GUARDA para que el
+  // propio equipo decida cuándo usarlo contra el rival.
+  function ganarBonusAleatorio(lado) {
+    var tipos = Object.keys(NOMBRE_BONUS);
+    var tipo = tipos[Math.floor(Math.random() * tipos.length)];
+    lados[lado].inventario.push(tipo);
     var cont = document.getElementById('lado-' + lado);
     if (cont) {
       var banner = document.createElement('div');
       banner.className = 'combate-sorpresa-banner';
-      banner.textContent = '🎁 ¡CAJA SORPRESA!';
+      banner.textContent = '🎁 ¡Bonus conseguido: ' + NOMBRE_BONUS[tipo] + '!';
       cont.appendChild(banner);
-      setTimeout(function () { banner.remove(); }, 900);
+      setTimeout(function () { banner.remove(); }, 1000);
     }
-    var efectos = ['bloqueo', 'apagon', 'glitch', 'locos'];
-    var tipo = efectos[Math.floor(Math.random() * efectos.length)];
-    setTimeout(function () { aplicarEfectoSobre(rival, tipo); }, 650);
   }
 
   function aplicarEfectoSobre(rival, tipo) {
@@ -280,34 +306,6 @@ var Combate = (function () {
     }
   }
 
-  function usarPoder(lado, tipo) {
-    var l = lados[lado];
-    if (!l.poderDisponible) return;
-    l.poderDisponible = false;
-    l.rachaFuror = 0;
-    Sonido.avanzar();
-    var rival = rivalDe(lado);
-    var rl = lados[rival];
-    var overlay = document.getElementById('bloqueo-' + rival);
-
-    if (tipo === 'cambiar') {
-      siguientePregunta(rival);
-      renderLado(lado);
-      return;
-    }
-    var duracion = tipo === 'bloqueo' ? 5000 : 4000;
-    rl.bloqueadoHasta = Date.now() + duracion;
-    if (overlay) {
-      overlay.className = 'combate-bloqueo-overlay activo' + (tipo === 'apagon' ? ' apagon' : '');
-      overlay.textContent = tipo === 'apagon' ? '⚫ ¡Apagón!' : '🔒 ¡Bloqueado!';
-    }
-    setTimeout(function () {
-      if (overlay) overlay.className = 'combate-bloqueo-overlay';
-      rl.bloqueadoHasta = 0;
-    }, duracion);
-    renderLado(lado);
-  }
-
   function siguientePregunta(lado) {
     var l = lados[lado];
     var activo = equipoActivo(lado);
@@ -324,7 +322,7 @@ var Combate = (function () {
   function evaluarLado(lado, indiceElegido, btnEl) {
     if (!enJuego || pausado) return;
     var l = lados[lado];
-    if (Date.now() < l.bloqueadoHasta) return; // bloqueado por el rival, no puede responder
+    if (Date.now() < l.bloqueadoHasta) return;
     var activo = equipoActivo(lado);
     var p = l.preguntaActual;
     var acierto = p && indiceElegido === p.correct_index;
@@ -336,14 +334,14 @@ var Combate = (function () {
       Sonido.acierto();
       l.streak++;
       l.rachaFuror++;
-      var puntos = l.rachaFuror >= RACHA_PARA_FUROR ? PUNTOS_ACIERTO * 2 : PUNTOS_ACIERTO;
-      sumarPuntosBando(lado, puntos);
-      if (l.rachaFuror >= RACHA_PARA_FUROR) l.poderDisponible = true;
+      var enFuror = l.rachaFuror >= RACHA_PARA_FUROR;
+      sumarPuntosBando(lado, enFuror ? PUNTOS_ACIERTO * 2 : PUNTOS_ACIERTO);
       if (l.streak >= RONDAS_PARA_ROTAR) { l.streak = 0; l.activoIdx++; }
-      if (Math.random() < 0.22) activarCajaSorpresa(lado);
+      if (Math.random() < 0.2) ganarBonusAleatorio(lado);
+      if (moverCuerda(lado, enFuror)) return; // alguien ganó por cuerda: partida terminada
     } else {
       Sonido.fallo();
-      l.streak = 0; l.rachaFuror = 0; l.poderDisponible = false;
+      l.streak = 0; l.rachaFuror = 0;
       sumarPuntosBando(lado, PUNTOS_FALLO);
       l.activoIdx++;
     }
@@ -354,8 +352,22 @@ var Combate = (function () {
     }, 550);
   }
 
-  function finalizar() {
+  function finalizar(ganadorPorCuerda) {
     if (!enJuego) return;
+    if (ganadorPorCuerda) {
+      Sonido.victoria();
+      var cont = document.getElementById('combateArena');
+      if (cont) {
+        var banner = document.createElement('div');
+        banner.className = 'combate-ganador-banner';
+        banner.textContent = (ganadorPorCuerda === 'rojo' ? '🔴 BANDO ROJO' : '🔵 BANDO AZUL') + ' ¡ARRASTRA AL RIVAL Y GANA!';
+        cont.appendChild(banner);
+      }
+      setTimeout(function () { detener(); Motor.setFase('RESULTADOS'); UI.render(); }, 1800);
+      enJuego = false;
+      clearInterval(handleTotal);
+      return;
+    }
     detener();
     Motor.setFase('RESULTADOS');
     UI.render();

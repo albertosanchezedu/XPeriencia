@@ -66,6 +66,7 @@
 
   UI.screens.EQUIPOS = function () {
     if (Motor.getEquipos().length === 0) {
+      if (Motor.hayPlantilla() && Motor.cargarPlantilla()) { pintarEquiposFlow(); return; }
       var presets = Motor.presetsDisponibles();
       Motor.crearEquipoDesdePreset(presets[0]);
       Motor.crearEquipoDesdePreset(Motor.presetsDisponibles()[0]);
